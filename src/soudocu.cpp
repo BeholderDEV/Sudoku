@@ -14,6 +14,7 @@
 #define TEXTODIFICULDADE 2
 #define MENU 1
 #define DIFICULDADE 2
+#define TAMANHOTILE 40
 
 #include <time.h>
 using namespace std;
@@ -138,8 +139,96 @@ int escolherDificuldade(RenderWindow &window, Data &media)
 	}
 }
 
+string intTOstring(int number)
+{
+	if (number == 0)
+	        return "0";
+	    string temp="";
+	    string returnvalue="";
+	    while (number>0)
+	    {
+	        temp+=number%10+48;
+	        number/=10;
+	    }
+	    for (int i=0;i<temp.length();i++)
+	        returnvalue+=temp[temp.length()-i-1];
+	    return returnvalue;
+}
+
+void desenharMapa(RenderWindow &window,int **mapa, int tamanho, int indice)
+{
+
+	Font font;
+	font.loadFromFile("font/sansation.ttf");
+
+
+	RectangleShape quadrado;
+	quadrado.setSize(Vector2f(TAMANHOTILE, TAMANHOTILE));
+	quadrado.setOutlineThickness(1);
+	quadrado.setOutlineColor(sf::Color::Black);
+	quadrado.setFillColor(sf::Color::Transparent);
+
+	for(int i=0; i<tamanho; i++)
+	{
+		for(int j=0; j<tamanho; j++)
+		{
+			if(indice%tamanho==j && indice/tamanho==i)
+			{
+				quadrado.setFillColor(sf::Color::Red);
+				quadrado.setPosition((400-tamanho/2*TAMANHOTILE)+j*TAMANHOTILE,(300-tamanho/2*TAMANHOTILE)+i*TAMANHOTILE);
+				window.draw(quadrado);
+				quadrado.setFillColor(sf::Color::Transparent);
+			}
+			else
+			{
+				quadrado.setPosition((400-tamanho/2*TAMANHOTILE)+j*TAMANHOTILE,(300-tamanho/2*TAMANHOTILE)+i*TAMANHOTILE);
+				window.draw(quadrado);
+
+				Text temp(intTOstring(mapa[i][j]), font, 20);
+				temp.setPosition((400-tamanho/2*TAMANHOTILE)+j*TAMANHOTILE+10, (300-tamanho/2*TAMANHOTILE)+i*TAMANHOTILE+10);
+				temp.setColor(Color(80, 80, 80));
+
+				window.draw(temp);
+			}
+
+		}
+
+	}
+
+}
+
+void preencherMapa(int **m, int tamanho, int dificuldade)
+{
+	int n = tamanho;
+	int x = rand()%10;
+	for(int i = 0; i < n; i++, x++)
+	{
+		for(int j = 0; j < n; j++, x+=n)
+		{
+			for(int k = 0; k < n*n; k++, x++)
+			{
+				m[n*i+j][k] = (x % (n*n)) + 1;
+			}
+		}
+	}
+
+}
+
 void telaSeis(RenderWindow &window, Data &media, int dificuldade)
 {
+	int tamanho = 6;
+
+	int **m = new int*[256];
+	m[0] = new int[256*256];
+
+	for (int i=1; i<256; i++)
+	{
+		m[i] = m[i-1]+256;
+	}
+
+	preencherMapa(m,tamanho,dificuldade);
+
+	int indice = 0;
 	while(window.isOpen())
 	{
 		Event event;
@@ -170,11 +259,12 @@ void telaSeis(RenderWindow &window, Data &media, int dificuldade)
 
 		}
 
-
+		//selecionarTile(tamaho,indice);
 
 		window.clear();
 
 		window.draw(media.imagens.fundo);
+		desenharMapa(window, m , tamanho, indice);
 
 		window.display();
 

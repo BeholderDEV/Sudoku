@@ -9,26 +9,43 @@
 #include <iostream>
 #include <SFML/Graphics.hpp>
 #include <SFML/Audio.hpp>
+#include <fstream>
+#include <string>
 
-#define TEXTOMENU 1
-#define TEXTODIFICULDADE 2
-#define MENU 1
+
+#define MODOS 1
 #define DIFICULDADE 2
+#define MENU 3
 #define TAMANHOTILE 40
 
 #include <time.h>
 using namespace std;
 using namespace sf;
 
+struct RankUser{
+	string nome;
+	int tempo;
+};
+
+struct RankData{
+	RankUser usuario[5];
+};
+
 struct ImageData{
 	Sprite fundo;
+	Sprite fundo_jogo;
 	Sprite botao;
 	Sprite botaoh;
+};
+struct UserData{
+	string nome;
 };
 
 struct SoundData{
 	Music bach;
 	Music ravel;
+	Music botao;
+	Music enter;
 };
 
 struct TextData{
@@ -39,6 +56,8 @@ struct Data{
 	ImageData imagens;
 	SoundData musicas;
 	TextData textos;
+	UserData usuario;
+	RankData rank;
 };
 
 void carregarImagens(ImageData &imagens)
@@ -46,6 +65,10 @@ void carregarImagens(ImageData &imagens)
 	Texture *backgroundTexture = new Texture;
 	backgroundTexture->loadFromFile("img/fundo-inicio.jpg");
 	imagens.fundo.setTexture(*backgroundTexture);
+
+	Texture *backgroundTexture02 = new Texture;
+	backgroundTexture02->loadFromFile("img/fundo-game.jpg");
+	imagens.fundo_jogo.setTexture(*backgroundTexture02);
 
 	Texture *botaoTexture = new Texture;
 	botaoTexture->loadFromFile("img/botao.png");
@@ -60,11 +83,18 @@ void carregarSons(SoundData &musicas)
 {
 	musicas.bach.openFromFile("som/bach.ogg");
 	musicas.ravel.openFromFile("som/ravel.ogg");
+	musicas.botao.openFromFile("som/botao.ogg");
+	musicas.enter.openFromFile("som/metal.ogg");
 }
 
 void carregarTextos(TextData &texto, int tipo)
 {
-	if(tipo == TEXTOMENU)
+	if(tipo == MENU)
+	{
+		texto.modos[0]="Jogo";
+		texto.modos[1]="Rank";
+	}
+	if(tipo == MODOS)
 	{
 		texto.modos[0]=" 6x6 ";
 		texto.modos[1]=" 9x9 ";
@@ -72,7 +102,7 @@ void carregarTextos(TextData &texto, int tipo)
 		texto.modos[3]="16x16";
 		texto.modos[4]="Diag";
 	}
-	if(tipo == TEXTODIFICULDADE)
+	if(tipo == DIFICULDADE)
 	{
 		texto.modos[0]=" Fácil ";
 		texto.modos[1]="Médio ";
@@ -80,16 +110,53 @@ void carregarTextos(TextData &texto, int tipo)
 	}
 
 }
-
-void principal(RenderWindow &window);
+void telaMenu(RenderWindow &window, Data &media);
+void telaModos(RenderWindow &window, Data &media);
 int tratamentoTeclas(RenderWindow &window, int &j, Data &media, int tipo);
 void desenharBotoes(RenderWindow &window, Data &media, int j, int indice);
+
+void lerArquivo(int modo, Data &media)
+{
+	ifstream leitura;
+	leitura.open("rank/6x6.rank");
+
+	char *temp;
+
+	temp = new char [35];
+
+
+	for(int i=0; i<5; i++)
+	{
+		leitura.getline(temp, 35);
+		media.rank.usuario[i].nome = temp;
+
+		leitura.getline(temp, 35);
+		media.rank.usuario[i].tempo = atoi(temp);
+	}
+
+	delete temp;
+	leitura.close();
+}
+
+void escreverArquivo(int modo, Data &media)
+{
+	ofstream escrita;
+	escrita.open("rank/6x62.rank");
+
+	for(int i=0; i<5; i++)
+	{
+		escrita << media.rank.usuario[i].nome << endl;
+		escrita << media.rank.usuario[i].tempo << endl;
+	}
+
+	escrita.close();
+}
 
 int escolherDificuldade(RenderWindow &window, Data &media)
 {
 	int j=0;
 
-	carregarTextos(media.textos,TEXTODIFICULDADE);
+	carregarTextos(media.textos,DIFICULDADE);
 
 	window.clear();
 
@@ -117,6 +184,7 @@ int escolherDificuldade(RenderWindow &window, Data &media)
 					tratamentoTeclas(window, j, media, DIFICULDADE);
 					if(Keyboard::isKeyPressed(Keyboard::Return))
 					{
+						media.musicas.enter.play();
 						return j;
 					}
 				break;
@@ -139,6 +207,91 @@ int escolherDificuldade(RenderWindow &window, Data &media)
 	}
 }
 
+int lerTile(RenderWindow &window)
+{
+	Event event;
+	string valor="";
+
+	while(window.isOpen())
+	{
+		while (window.pollEvent(event))
+		{
+			// check the type of the event...
+			switch (event.type)
+			{
+				// window closed
+				case Event::Closed:
+					window.close();
+					break;
+
+				case Event::KeyPressed:
+					if( (Keyboard::isKeyPressed(Keyboard::Return)) )
+					{
+						return atoi(valor.c_str());
+					}
+				break;
+				// In event loop...
+				case Event::TextEntered:
+					// Handle ASCII characters only
+					if(event.text.unicode=='\b' && valor.size()>0)
+					{
+						valor.erase(valor.size()-1,1);
+					}
+					else if(event.text.unicode < 128 && valor.size()<3)
+					{
+						valor+= static_cast<char>(event.text.unicode);
+					}
+				break;
+				// we don't process other types of events
+				default:
+					break;
+			}
+		}
+	}
+}
+
+void selecionarTile(RenderWindow &window, int tamanho,int &indice, int **mapa)
+{
+	if(Keyboard::isKeyPressed(Keyboard::Left))
+	{
+		indice--;
+		if(indice<0)
+		{
+			indice=tamanho*tamanho-1;
+		}
+	}
+
+	if(Keyboard::isKeyPressed(Keyboard::Right))
+	{
+		indice++;
+		if(indice>tamanho*tamanho-1)
+		{
+			indice=0;
+		}
+	}
+	if(Keyboard::isKeyPressed(Keyboard::Up))
+	{
+		indice-=tamanho;
+		if(indice<0)
+		{
+			indice=((tamanho*tamanho))-tamanho+((indice+tamanho)%tamanho);
+		}
+	}
+
+	if(Keyboard::isKeyPressed(Keyboard::Down))
+	{
+		indice+=tamanho;
+		if(indice>tamanho*tamanho-1)
+		{
+			indice=indice%tamanho;
+		}
+	}
+	if(Keyboard::isKeyPressed(Keyboard::Return))
+	{
+		mapa[indice/tamanho][indice%tamanho]=lerTile(window);
+	}
+}
+
 string intTOstring(int number)
 {
 	if (number == 0)
@@ -155,12 +308,18 @@ string intTOstring(int number)
 	    return returnvalue;
 }
 
-void desenharMapa(RenderWindow &window,int **mapa, int tamanho, int indice)
+void desenharMapa(RenderWindow &window,int **mapa, int tamanho, int indice, int tempo)
 {
 
 	Font font;
 	font.loadFromFile("font/sansation.ttf");
 
+
+	Text relogio(intTOstring(tempo), font, 20);
+	relogio.setPosition(700, 40);
+	relogio.setColor(Color(80, 80, 80));
+
+	window.draw(relogio);
 
 	RectangleShape quadrado;
 	quadrado.setSize(Vector2f(TAMANHOTILE, TAMANHOTILE));
@@ -172,25 +331,22 @@ void desenharMapa(RenderWindow &window,int **mapa, int tamanho, int indice)
 	{
 		for(int j=0; j<tamanho; j++)
 		{
+			quadrado.setPosition((400-tamanho/2*TAMANHOTILE)+j*TAMANHOTILE,(300-tamanho/2*TAMANHOTILE)+i*TAMANHOTILE);
+			window.draw(quadrado);
+
+			Text tile(intTOstring(mapa[i][j]), font, 20);
+			tile.setPosition((400-tamanho/2*TAMANHOTILE)+j*TAMANHOTILE+10, (300-tamanho/2*TAMANHOTILE)+i*TAMANHOTILE+10);
+			tile.setColor(Color(80, 80, 80));
+
+			window.draw(tile);
+
 			if(indice%tamanho==j && indice/tamanho==i)
 			{
-				quadrado.setFillColor(sf::Color::Red);
+				quadrado.setFillColor(Color(255,0,0,100));
 				quadrado.setPosition((400-tamanho/2*TAMANHOTILE)+j*TAMANHOTILE,(300-tamanho/2*TAMANHOTILE)+i*TAMANHOTILE);
 				window.draw(quadrado);
 				quadrado.setFillColor(sf::Color::Transparent);
 			}
-			else
-			{
-				quadrado.setPosition((400-tamanho/2*TAMANHOTILE)+j*TAMANHOTILE,(300-tamanho/2*TAMANHOTILE)+i*TAMANHOTILE);
-				window.draw(quadrado);
-
-				Text temp(intTOstring(mapa[i][j]), font, 20);
-				temp.setPosition((400-tamanho/2*TAMANHOTILE)+j*TAMANHOTILE+10, (300-tamanho/2*TAMANHOTILE)+i*TAMANHOTILE+10);
-				temp.setColor(Color(80, 80, 80));
-
-				window.draw(temp);
-			}
-
 		}
 
 	}
@@ -228,6 +384,10 @@ void telaSeis(RenderWindow &window, Data &media, int dificuldade)
 
 	preencherMapa(m,tamanho,dificuldade);
 
+	time_t tempo_inicial, tempo_atual, tempo_decorrido;
+
+	time(&tempo_inicial);
+
 	int indice = 0;
 	while(window.isOpen())
 	{
@@ -245,11 +405,13 @@ void telaSeis(RenderWindow &window, Data &media, int dificuldade)
 					break;
 
 				case Event::KeyPressed:
+
 					if( (Keyboard::isKeyPressed(Keyboard::Escape)) )
-						{
-							media.musicas.ravel.stop();
-							principal(window);
-						}
+					{
+						media.musicas.ravel.stop();
+						telaMenu(window,media);
+					}
+					selecionarTile(window, tamanho,indice, m);
 				break;
 
 				// we don't process other types of events
@@ -258,13 +420,13 @@ void telaSeis(RenderWindow &window, Data &media, int dificuldade)
 			}
 
 		}
+		time(&tempo_atual);
 
-		//selecionarTile(tamaho,indice);
-
+		tempo_decorrido=(tempo_atual-tempo_inicial);
 		window.clear();
 
-		window.draw(media.imagens.fundo);
-		desenharMapa(window, m , tamanho, indice);
+		window.draw(media.imagens.fundo_jogo);
+		desenharMapa(window, m , tamanho, indice, tempo_decorrido);
 
 		window.display();
 
@@ -293,7 +455,7 @@ void telaNove(RenderWindow &window, Data &media, int dificuldade)
 					if( (Keyboard::isKeyPressed(Keyboard::Escape)) )
 						{
 							media.musicas.ravel.stop();
-							principal(window);
+							telaMenu(window,media);
 						}
 				break;
 
@@ -337,7 +499,7 @@ void telaDoze(RenderWindow &window, Data &media, int dificuldade)
 					if( (Keyboard::isKeyPressed(Keyboard::Escape)) )
 						{
 							media.musicas.ravel.stop();
-							principal(window);
+							telaMenu(window,media);
 						}
 				break;
 
@@ -381,7 +543,7 @@ void telaDeze(RenderWindow &window, Data &media, int dificuldade)
 					if( (Keyboard::isKeyPressed(Keyboard::Escape)) )
 						{
 							media.musicas.ravel.stop();
-							principal(window);
+							telaMenu(window,media);
 						}
 				break;
 
@@ -425,7 +587,7 @@ void telaDiag(RenderWindow &window, Data &media, int dificuldade)
 					if( (Keyboard::isKeyPressed(Keyboard::Escape)) )
 						{
 							media.musicas.ravel.stop();
-							principal(window);
+							telaMenu(window,media);
 						}
 				break;
 
@@ -448,11 +610,22 @@ void telaDiag(RenderWindow &window, Data &media, int dificuldade)
 	}
 }
 
+void telaRank(RenderWindow &window, Data &media)
+{
+	lerArquivo(1,media);
+	escreverArquivo(1,media);
+}
+
 int tratamentoTeclas(RenderWindow &window, int &j, Data &media, int tipo)
 {
 	int indice=0;
 
 	if(tipo==MENU)
+	{
+		indice=1;
+	}
+
+	if(tipo==MODOS)
 	{
 		indice=4;
 	}
@@ -470,6 +643,7 @@ int tratamentoTeclas(RenderWindow &window, int &j, Data &media, int tipo)
 
 	if(Keyboard::isKeyPressed(Keyboard::Up))
 	{
+		media.musicas.botao.play();
 		j--;
 		if(j<0)
 		{
@@ -479,6 +653,7 @@ int tratamentoTeclas(RenderWindow &window, int &j, Data &media, int tipo)
 
 	if(Keyboard::isKeyPressed(Keyboard::Down))
 	{
+		media.musicas.botao.play();
 		j++;
 		if(j>indice)
 		{
@@ -489,37 +664,51 @@ int tratamentoTeclas(RenderWindow &window, int &j, Data &media, int tipo)
 	if(Keyboard::isKeyPressed(Keyboard::Escape))
 	{
 		media.musicas.ravel.stop();
-		principal(window);
+		telaMenu(window, media);
 	}
 
 	if(Keyboard::isKeyPressed(Keyboard::Return))
 	{
+		media.musicas.enter.play();
+		if(tipo==MENU)
+		{
+			switch(j)
+			{
+				case 0:
+					telaModos(window,media);
+				break;
+				case 1:
+					telaRank(window, media);
+				break;
+			}
+		}
 
-			if(tipo==MENU)
+		if(tipo==MODOS)
+		{
+			switch(j)
 			{
-				switch(j)
-				{
-					case 0:
-						telaSeis(window, media, escolherDificuldade(window, media));
-					break;
-					case 1:
-						telaNove(window, media, escolherDificuldade(window, media));
-					break;
-					case 2:
-						telaDoze(window, media, escolherDificuldade(window, media));
-					break;
-					case 3:
-						telaDeze(window, media, escolherDificuldade(window, media));
-					break;
-					case 4:
-						telaDiag(window, media, escolherDificuldade(window, media));
-					break;
-				}
+				case 0:
+					telaSeis(window, media, escolherDificuldade(window, media));
+				break;
+				case 1:
+					telaNove(window, media, escolherDificuldade(window, media));
+				break;
+				case 2:
+					telaDoze(window, media, escolherDificuldade(window, media));
+				break;
+				case 3:
+					telaDeze(window, media, escolherDificuldade(window, media));
+				break;
+				case 4:
+					telaDiag(window, media, escolherDificuldade(window, media));
+				break;
 			}
-			if(tipo==DIFICULDADE)
-			{
-				return j;
-			}
+		}
+
+		if(tipo==DIFICULDADE)
+		{
+			return j;
+		}
 	}
 }
 
@@ -567,18 +756,63 @@ void desenharBotoes(RenderWindow &window, Data &media, int j, int indice)
 
 	desenharTexto(window, media.textos, indice);
 
-
 }
 
-void principal(RenderWindow &window)
+void telaModos(RenderWindow &window, Data &media)
 {
+	carregarTextos(media.textos,MODOS);
 	int j=0;
 
-	Data media;
+	window.clear();
 
-	carregarImagens(media.imagens);
-	carregarSons(media.musicas);
-	carregarTextos(media.textos,TEXTOMENU);
+	window.draw(media.imagens.fundo);
+
+	window.display();
+
+	media.musicas.ravel.play();
+
+	while(window.isOpen())
+	{
+
+		Event event;
+		// while there are pending events...
+
+		while (window.pollEvent(event))
+		{
+			// check the type of the event...
+			switch (event.type)
+			{
+				// window closed
+				case Event::Closed:
+					window.close();
+					break;
+
+				case Event::KeyPressed:
+					tratamentoTeclas(window, j, media, MODOS);
+				break;
+
+				// we don't process other types of events
+				default:
+					break;
+			}
+
+		}
+
+		window.clear();
+
+		window.draw(media.imagens.fundo);
+
+		desenharBotoes(window, media , j,5);
+
+		window.display();
+
+	}
+}
+
+void telaMenu(RenderWindow &window, Data &media)
+{
+	carregarTextos(media.textos,MENU);
+	int j=0;
 
 	window.clear();
 
@@ -619,11 +853,94 @@ void principal(RenderWindow &window)
 
 		window.draw(media.imagens.fundo);
 
-		desenharBotoes(window, media , j,5);
+		desenharBotoes(window, media , j,2);
 
 		window.display();
 
 	}
+}
+
+void telaUsuario(RenderWindow &window, Data &media)
+{
+	RectangleShape quadrado;
+	quadrado.setSize(Vector2f(600,50));
+	quadrado.setOutlineThickness(0);
+	quadrado.setOutlineColor(Color::Black);
+	quadrado.setFillColor(Color(0,0,0,100));
+	quadrado.setPosition(100,290);
+
+	Font font;
+	font.loadFromFile("font/sansation.ttf");
+
+	media.usuario.nome="";
+
+	std::string str;
+
+	Text desc("Digite seu nome", font, 30);
+	desc.setPosition(300, 230);
+	desc.setColor(Color(80, 80, 80));
+
+	while(window.isOpen())
+	{
+		Event event;
+		// while there are pending events...
+
+
+
+		while (window.pollEvent(event))
+		{
+			// check the type of the event...
+			switch (event.type)
+			{
+				// window closed
+				case Event::Closed:
+					window.close();
+					break;
+
+				case Event::KeyPressed:
+					if( (Keyboard::isKeyPressed(Keyboard::Return)) )
+					{
+						telaMenu(window,media);
+					}
+
+				break;
+
+				// In event loop...
+				case Event::TextEntered:
+				    // Handle ASCII characters only
+					if(event.text.unicode=='\b' && media.usuario.nome.size()>0)
+					{
+						media.usuario.nome.erase(media.usuario.nome.size()-1,1);
+					}
+					else if(event.text.unicode < 128 && media.usuario.nome.size()<35)
+				    {
+				    		media.usuario.nome+= static_cast<char>(event.text.unicode);
+				    }
+				break;
+				// we don't process other types of events
+				default:
+					break;
+			}
+		}
+
+
+		window.draw(media.imagens.fundo);
+
+
+
+
+		Text nome(media.usuario.nome, font, 30);
+		nome.setPosition(400 - nome.getLocalBounds().width/2, 300);
+		nome.setColor(Color(255,255,255));
+
+		window.draw(desc);
+		window.draw(quadrado);
+		window.draw(nome);
+		window.display();
+
+
+	}
+
 }
 
 int main()
@@ -634,7 +951,14 @@ int main()
 	RenderWindow window(VideoMode(800, 600), "Sudoku", Style::Default);
 	window.setVerticalSyncEnabled(true);
 
-	principal(window);
+	Data media;
+
+	carregarImagens(media.imagens);
+	carregarSons(media.musicas);
+	carregarTextos(media.textos,MODOS);
+
+	telaUsuario(window, media);
+	telaMenu(window, media);
 
 
 	return 0;

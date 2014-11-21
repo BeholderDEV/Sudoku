@@ -442,49 +442,53 @@ bool redefinir(bool bol[16], int t)
 void preencherMapa(int **m, int tamanho, int dificuldade)
 {
 	int val[16];
-	bool valbol[16];
+		bool valbol[16];
 
-	for(int i=0; i<tamanho; i++)
-	{
-		val[i]=i+1;
-		valbol[i]=true;
-	}
-
-	int aux=(rand()%tamanho);
-
-	for(int i = 0; i < tamanho; i++)
-	{
-		for(int j = 0; j < tamanho; j++)
+		for(int i=0; i<16; i++)
 		{
-			if(valbol[aux])
+			val[i]=i+1;
+			valbol[i]=true;
+		}
+
+		int aux=(rand()%tamanho);
+
+		for(int i = 0; i < tamanho; i++)
+		{
+			for(int j = 0; j < tamanho; j++)
 			{
-				if(validarLinha(m,tamanho,i,val[aux])&& validarColuna(m,tamanho,j,val[aux]) && validarQuadrado(m,tamanho,i,j,val[aux]))
+				if(valbol[aux])
 				{
-					m[i][j]=val[aux];
-					aux=(rand()%tamanho);
-				}
-				else
-				{
-					j--;
-				}
-				valbol[aux]=false;
-				aux=(aux+1)%tamanho;
-			}
-			else
-			{
-				aux=(aux+1)%tamanho;
-				j--;
-				if(redefinir(valbol,tamanho))
-				{
-					for(int i=0; i<tamanho; i++)
+					if(validarLinha(m,tamanho,i,val[aux])&& validarColuna(m,tamanho,j,val[aux]) && validarQuadrado(m,tamanho,i,j,val[aux]))
+					{
+						m[i][j]=val[aux];
+						for(int i=0; i<16; i++)
 						{
 							valbol[i]=true;
 						}
+						aux=(rand()%tamanho);
+					}
+					else
+					{
+						valbol[aux]=false;
+						j--;
+						aux=(aux+1)%tamanho;
+					}
+				}
+				else
+				{
+					aux=(aux+1)%tamanho;
+					j--;
+					if(redefinir(valbol,tamanho))
+					{
+						for(int i=0; i<16; i++)
+						{
+							valbol[i]=true;
+						}
+						j=-1;
+					}
 				}
 			}
-
 		}
-	}
 
 }
 

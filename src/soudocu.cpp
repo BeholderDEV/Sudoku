@@ -353,18 +353,136 @@ void desenharMapa(RenderWindow &window,int **mapa, int tamanho, int indice, int 
 
 }
 
+bool validarLinha(int **m, int tamanho, int linha, int valor)
+{
+	for(int i=0; i<tamanho; i++)
+	{
+		if(m[linha][i]==valor)
+		{
+			return false;
+		}
+	}
+	return true;
+}
+
+bool validarColuna(int **m, int tamanho, int coluna, int valor)
+{
+	for(int i=0; i<tamanho; i++)
+	{
+		if(m[i][coluna]==valor)
+		{
+			return false;
+		}
+	}
+	return true;
+}
+
+bool validarQuadrado(int **m, int tamanho,int linha, int coluna, int valor)
+{
+	int quadx, quady;
+
+	switch(tamanho)
+	{
+	case 6:
+		quadx=3;
+		quady=2;
+		break;
+	case 9:
+		quadx=3;
+		quady=3;
+		break;
+	case 12:
+		quadx=4;
+		quady=3;
+		break;
+	case 16:
+		quadx=4;
+		quady=4;
+		break;
+	default:
+		quadx=3;
+		quady=2;
+		break;
+
+	}
+
+	int yini=linha/quady;
+	int xini=coluna/quadx;
+
+
+	yini=(yini*quady);
+	xini=(xini*quadx);
+
+	for(int i=yini; i<yini+quady; i++)
+	{
+		for(int j=xini; j<xini+quadx;j++)
+		{
+			if(m[i][j]==valor)
+			{
+				return false;
+			}
+		}
+	}
+	return true;
+
+}
+
+bool redefinir(bool bol[16], int t)
+{
+	for(int i=0; i<t; i++)
+	{
+		if(bol[i])
+		{
+			return false;
+		}
+	}
+	return true;
+}
+
 void preencherMapa(int **m, int tamanho, int dificuldade)
 {
-	int n = tamanho;
-	int x = rand()%10;
-	for(int i = 0; i < n; i++, x++)
+	int val[16];
+	bool valbol[16];
+
+	for(int i=0; i<tamanho; i++)
 	{
-		for(int j = 0; j < n; j++, x+=n)
+		val[i]=i+1;
+		valbol[i]=true;
+	}
+
+	int aux=(rand()%tamanho);
+
+	for(int i = 0; i < tamanho; i++)
+	{
+		for(int j = 0; j < tamanho; j++)
 		{
-			for(int k = 0; k < n*n; k++, x++)
+			if(valbol[aux])
 			{
-				m[n*i+j][k] = (x % (n*n)) + 1;
+				if(validarLinha(m,tamanho,i,val[aux])&& validarColuna(m,tamanho,j,val[aux]) && validarQuadrado(m,tamanho,i,j,val[aux]))
+				{
+					m[i][j]=val[aux];
+					aux=(rand()%tamanho);
+				}
+				else
+				{
+					j--;
+				}
+				valbol[aux]=false;
+				aux=(aux+1)%tamanho;
 			}
+			else
+			{
+				aux=(aux+1)%tamanho;
+				j--;
+				if(redefinir(valbol,tamanho))
+				{
+					for(int i=0; i<tamanho; i++)
+						{
+							valbol[i]=true;
+						}
+				}
+			}
+
 		}
 	}
 

@@ -385,7 +385,7 @@ void selecionarTile(RenderWindow &window, int tamanho,int &indice, int **mapa,Da
 	if(Keyboard::isKeyPressed(Keyboard::Return))
 	{
 		int val=lerTile(window, tamanho, indice, mapa);
-		if(val>0)
+		if(val>0 && val<=tamanho)
 		{
 			mapa[indice/tamanho][indice%tamanho]=val;
 		}
@@ -489,6 +489,7 @@ void preencherMapa(int **m, int tamanho)
 
 	int aux=(rand()%tamanho);
 
+	int resets=0;
 	for(int i = 0; i < tamanho; i++)
 	{
 		for(int j = 0; j < tamanho; j++)
@@ -522,11 +523,29 @@ void preencherMapa(int **m, int tamanho)
 						valbol[x]=true;
 						m[i][x]=0;
 					}
+					resets++;
 					j=-1;
+					cout<<resets<<endl;
+					if(resets>1000)
+					{
+						srand(time(NULL));
+						cout<<"reset";
+						i=0;
+						j=0;
+						resets=0;
+						for(int i2 = 0; i2 < tamanho; i2++)
+						{
+							for(int j2 = 0; j2 < tamanho; j2++)
+							{
+								m[i2][j2]=0;
+							}
+						}
+					}
 				}
 			}
 		}
 	}
+
 }
 
 void adicionarDificuldade(int **mapa, int tamanho, int dificuldade)
@@ -582,7 +601,7 @@ void telaTamanho(RenderWindow &window, Data &media, int dificuldade, int tamanho
 
 	for (int i=1; i<256; i++)
 	{
-		m[i] = m[i-1]+256;
+		m[i] = m[i-1]+20;
 	}
 
 	preencherMapa(m,tamanho);

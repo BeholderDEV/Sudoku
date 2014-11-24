@@ -423,6 +423,32 @@ string intTOstring(int number)
 
 void desenharMapa(RenderWindow &window,int **mapa,bool **bloc, int tamanho, int indice, int tempo, int errados)
 {
+	int quadx, quady;
+
+		switch(tamanho)
+		{
+		case 6:
+			quadx=3;
+			quady=2;
+			break;
+		case 9:
+			quadx=3;
+			quady=3;
+			break;
+		case 12:
+			quadx=4;
+			quady=3;
+			break;
+		case 16:
+			quadx=4;
+			quady=4;
+			break;
+		default:
+			quadx=3;
+			quady=2;
+			break;
+
+		}
 	int TAMANHOTILE, TAMANHOFONTE;
 
 	if(tamanho==16)
@@ -451,6 +477,12 @@ void desenharMapa(RenderWindow &window,int **mapa,bool **bloc, int tamanho, int 
 	erros.setColor(Color::Red);
 
 	window.draw(erros);
+
+	RectangleShape quadradog;
+	quadradog.setSize(Vector2f(TAMANHOTILE*quadx, TAMANHOTILE*quady));
+	quadradog.setOutlineThickness(1);
+	quadradog.setOutlineColor(sf::Color::Red);
+	quadradog.setFillColor(sf::Color::Transparent);
 
 	RectangleShape quadrado;
 	quadrado.setSize(Vector2f(TAMANHOTILE, TAMANHOTILE));
@@ -495,8 +527,20 @@ void desenharMapa(RenderWindow &window,int **mapa,bool **bloc, int tamanho, int 
 				quadrado.setFillColor(sf::Color::Transparent);
 			}
 		}
-
 	}
+
+	for(int i=0; i<tamanho; i++)
+	{
+		for(int j=0; j<tamanho; j++)
+		{
+			if(i%quady==0 && j%quadx==0)
+			{
+				quadradog.setPosition((400-tamanho/2*TAMANHOTILE)+j*TAMANHOTILE,(300-tamanho/2*TAMANHOTILE)+i*TAMANHOTILE);
+				window.draw(quadradog);
+			}
+		}
+	}
+
 
 }
 void telaCarregamento(RenderWindow &window, Data &media)

@@ -16,7 +16,6 @@
 #define MODOS 1
 #define DIFICULDADE 2
 #define MENU 3
-#define TAMANHOTILE 40
 
 #include <time.h>
 using namespace std;
@@ -152,207 +151,6 @@ void escreverArquivo(int modo, Data &media)
 	escrita.close();
 }
 
-int escolherDificuldade(RenderWindow &window, Data &media)
-{
-	int j=0;
-
-	carregarTextos(media.textos,DIFICULDADE);
-
-	window.clear();
-
-	window.draw(media.imagens.fundo);
-
-	window.display();
-
-	while(window.isOpen())
-	{
-
-		Event event;
-		// while there are pending events...
-
-		while (window.pollEvent(event))
-		{
-			// check the type of the event...
-			switch (event.type)
-			{
-				// window closed
-				case Event::Closed:
-					window.close();
-					break;
-
-				case Event::KeyPressed:
-					tratamentoTeclas(window, j, media, DIFICULDADE);
-					if(Keyboard::isKeyPressed(Keyboard::Return))
-					{
-						media.musicas.enter.play();
-						return j;
-					}
-				break;
-
-				// we don't process other types of events
-				default:
-					break;
-			}
-
-		}
-
-		window.clear();
-
-		window.draw(media.imagens.fundo);
-
-		desenharBotoes(window, media , j, 3);
-
-		window.display();
-
-	}
-}
-
-int lerTile(RenderWindow &window)
-{
-	Event event;
-	string valor="";
-
-	while(window.isOpen())
-	{
-		while (window.pollEvent(event))
-		{
-			// check the type of the event...
-			switch (event.type)
-			{
-				// window closed
-				case Event::Closed:
-					window.close();
-					break;
-
-				case Event::KeyPressed:
-					if( (Keyboard::isKeyPressed(Keyboard::Return)) )
-					{
-						return atoi(valor.c_str());
-					}
-				break;
-				// In event loop...
-				case Event::TextEntered:
-					// Handle ASCII characters only
-					if(event.text.unicode=='\b' && valor.size()>0)
-					{
-						valor.erase(valor.size()-1,1);
-					}
-					else if(event.text.unicode < 128 && valor.size()<3)
-					{
-						valor+= static_cast<char>(event.text.unicode);
-					}
-				break;
-				// we don't process other types of events
-				default:
-					break;
-			}
-		}
-	}
-}
-
-void selecionarTile(RenderWindow &window, int tamanho,int &indice, int **mapa)
-{
-	if(Keyboard::isKeyPressed(Keyboard::Left))
-	{
-		indice--;
-		if(indice<0)
-		{
-			indice=tamanho*tamanho-1;
-		}
-	}
-
-	if(Keyboard::isKeyPressed(Keyboard::Right))
-	{
-		indice++;
-		if(indice>tamanho*tamanho-1)
-		{
-			indice=0;
-		}
-	}
-	if(Keyboard::isKeyPressed(Keyboard::Up))
-	{
-		indice-=tamanho;
-		if(indice<0)
-		{
-			indice=((tamanho*tamanho))-tamanho+((indice+tamanho)%tamanho);
-		}
-	}
-
-	if(Keyboard::isKeyPressed(Keyboard::Down))
-	{
-		indice+=tamanho;
-		if(indice>tamanho*tamanho-1)
-		{
-			indice=indice%tamanho;
-		}
-	}
-	if(Keyboard::isKeyPressed(Keyboard::Return))
-	{
-		mapa[indice/tamanho][indice%tamanho]=lerTile(window);
-	}
-}
-
-string intTOstring(int number)
-{
-	if (number == 0)
-	        return "0";
-	    string temp="";
-	    string returnvalue="";
-	    while (number>0)
-	    {
-	        temp+=number%10+48;
-	        number/=10;
-	    }
-	    for (int i=0;i<temp.length();i++)
-	        returnvalue+=temp[temp.length()-i-1];
-	    return returnvalue;
-}
-
-void desenharMapa(RenderWindow &window,int **mapa, int tamanho, int indice, int tempo)
-{
-
-	Font font;
-	font.loadFromFile("font/sansation.ttf");
-
-
-	Text relogio(intTOstring(tempo), font, 20);
-	relogio.setPosition(700, 40);
-	relogio.setColor(Color(80, 80, 80));
-
-	window.draw(relogio);
-
-	RectangleShape quadrado;
-	quadrado.setSize(Vector2f(TAMANHOTILE, TAMANHOTILE));
-	quadrado.setOutlineThickness(1);
-	quadrado.setOutlineColor(sf::Color::Black);
-	quadrado.setFillColor(sf::Color::Transparent);
-
-	for(int i=0; i<tamanho; i++)
-	{
-		for(int j=0; j<tamanho; j++)
-		{
-			quadrado.setPosition((400-tamanho/2*TAMANHOTILE)+j*TAMANHOTILE,(300-tamanho/2*TAMANHOTILE)+i*TAMANHOTILE);
-			window.draw(quadrado);
-
-			Text tile(intTOstring(mapa[i][j]), font, 20);
-			tile.setPosition((400-tamanho/2*TAMANHOTILE)+j*TAMANHOTILE+10, (300-tamanho/2*TAMANHOTILE)+i*TAMANHOTILE+10);
-			tile.setColor(Color(80, 80, 80));
-
-			window.draw(tile);
-
-			if(indice%tamanho==j && indice/tamanho==i)
-			{
-				quadrado.setFillColor(Color(255,0,0,100));
-				quadrado.setPosition((400-tamanho/2*TAMANHOTILE)+j*TAMANHOTILE,(300-tamanho/2*TAMANHOTILE)+i*TAMANHOTILE);
-				window.draw(quadrado);
-				quadrado.setFillColor(sf::Color::Transparent);
-			}
-		}
-
-	}
-
-}
-
 bool validarLinha(int **m, int tamanho, int linha, int valor)
 {
 	for(int i=0; i<tamanho; i++)
@@ -439,63 +237,344 @@ bool redefinir(bool bol[16], int t)
 	return true;
 }
 
-void preencherMapa(int **m, int tamanho, int dificuldade)
+int escolherDificuldade(RenderWindow &window, Data &media)
 {
-	int val[16];
-		bool valbol[16];
+	int j=0;
 
-		for(int i=0; i<16; i++)
+	carregarTextos(media.textos,DIFICULDADE);
+
+	window.clear();
+
+	window.draw(media.imagens.fundo);
+
+	window.display();
+
+	while(window.isOpen())
+	{
+
+		Event event;
+		// while there are pending events...
+
+		while (window.pollEvent(event))
 		{
-			val[i]=i+1;
-			valbol[i]=true;
+			// check the type of the event...
+			switch (event.type)
+			{
+				// window closed
+				case Event::Closed:
+					window.close();
+					break;
+
+				case Event::KeyPressed:
+					tratamentoTeclas(window, j, media, DIFICULDADE);
+					if(Keyboard::isKeyPressed(Keyboard::Return))
+					{
+						media.musicas.enter.play();
+						return j;
+					}
+				break;
+
+				// we don't process other types of events
+				default:
+					break;
+			}
+
 		}
 
-		int aux=(rand()%tamanho);
+		window.clear();
 
-		for(int i = 0; i < tamanho; i++)
+		window.draw(media.imagens.fundo);
+
+		desenharBotoes(window, media , j, 3);
+
+		window.display();
+
+	}
+}
+
+int lerTile(RenderWindow &window, int tamanho,int indice, int **mapa)
+{
+	Event event;
+	string valor="";
+
+	while(window.isOpen())
+	{
+		while (window.pollEvent(event))
 		{
-			for(int j = 0; j < tamanho; j++)
+			// check the type of the event...
+			switch (event.type)
 			{
-				if(valbol[aux])
-				{
-					if(validarLinha(m,tamanho,i,val[aux])&& validarColuna(m,tamanho,j,val[aux]) && validarQuadrado(m,tamanho,i,j,val[aux]))
+				// window closed
+				case Event::Closed:
+					window.close();
+					break;
+
+				case Event::KeyPressed:
+					if( (Keyboard::isKeyPressed(Keyboard::Return)) )
 					{
-						m[i][j]=val[aux];
-						for(int i=0; i<16; i++)
+						int val=atoi(valor.c_str());
+						if(validarColuna(mapa,tamanho,indice%tamanho,val) && validarLinha(mapa,tamanho,indice/tamanho,val) && validarQuadrado(mapa,tamanho,indice/tamanho,indice%tamanho, val))
 						{
-							valbol[i]=true;
+							return val;
 						}
-						aux=(rand()%tamanho);
-					}
-					else
-					{
-						valbol[aux]=false;
-						j--;
-						aux=(aux+1)%tamanho;
-					}
-				}
-				else
-				{
-					aux=(aux+1)%tamanho;
-					j--;
-					if(redefinir(valbol,tamanho))
-					{
-						for(int i=0; i<16; i++)
+						else
 						{
-							valbol[i]=true;
+							return 0;
 						}
-						j=-1;
+
 					}
-				}
+				break;
+				// In event loop...
+				case Event::TextEntered:
+					// Handle ASCII characters only
+					if(event.text.unicode=='\b' && valor.size()>0)
+					{
+						valor.erase(valor.size()-1,1);
+					}
+					else if(event.text.unicode < 128 && valor.size()<3)
+					{
+						valor+= static_cast<char>(event.text.unicode);
+					}
+				break;
+				// we don't process other types of events
+				default:
+					break;
+			}
+		}
+	}
+}
+
+void selecionarTile(RenderWindow &window, int tamanho,int &indice, int **mapa,Data &media, int &erros)
+{
+	if(Keyboard::isKeyPressed(Keyboard::Left))
+	{
+		indice--;
+		if(indice<0)
+		{
+			indice=tamanho*tamanho-1;
+		}
+	}
+
+	if(Keyboard::isKeyPressed(Keyboard::Right))
+	{
+		indice++;
+		if(indice>tamanho*tamanho-1)
+		{
+			indice=0;
+		}
+	}
+	if(Keyboard::isKeyPressed(Keyboard::Up))
+	{
+		indice-=tamanho;
+		if(indice<0)
+		{
+			indice=((tamanho*tamanho))-tamanho+((indice+tamanho)%tamanho);
+		}
+	}
+
+	if(Keyboard::isKeyPressed(Keyboard::Down))
+	{
+		indice+=tamanho;
+		if(indice>tamanho*tamanho-1)
+		{
+			indice=indice%tamanho;
+		}
+	}
+	if(Keyboard::isKeyPressed(Keyboard::Return))
+	{
+		int val=lerTile(window, tamanho, indice, mapa);
+		if(val>0)
+		{
+			mapa[indice/tamanho][indice%tamanho]=val;
+		}
+		else
+		{
+			erros++;
+			media.musicas.enter.play();
+		}
+	}
+}
+
+string intTOstring(int number)
+{
+	if (number == 0)
+	        return "0";
+	    string temp="";
+	    string returnvalue="";
+	    while (number>0)
+	    {
+	        temp+=number%10+48;
+	        number/=10;
+	    }
+	    for (int i=0;i<temp.length();i++)
+	        returnvalue+=temp[temp.length()-i-1];
+	    return returnvalue;
+}
+
+void desenharMapa(RenderWindow &window,int **mapa, int tamanho, int indice, int tempo, int errados)
+{
+	int TAMANHOTILE, TAMANHOFONTE;
+
+	if(tamanho==16)
+	{
+		TAMANHOTILE=20;
+		TAMANHOFONTE=10;
+	}
+	else
+	{
+		TAMANHOTILE=40;
+		TAMANHOFONTE=20;
+	}
+
+	Font font;
+	font.loadFromFile("font/sansation.ttf");
+
+
+	Text relogio(intTOstring(tempo), font, 20);
+	relogio.setPosition(700, 40);
+	relogio.setColor(Color(80, 80, 80));
+
+	window.draw(relogio);
+
+	Text erros(intTOstring(errados), font, 20);
+	erros.setPosition(700, 550);
+	erros.setColor(Color::Red);
+
+	window.draw(erros);
+
+	RectangleShape quadrado;
+	quadrado.setSize(Vector2f(TAMANHOTILE, TAMANHOTILE));
+	quadrado.setOutlineThickness(1);
+	quadrado.setOutlineColor(sf::Color::Black);
+	quadrado.setFillColor(sf::Color::Transparent);
+
+	for(int i=0; i<tamanho; i++)
+	{
+		for(int j=0; j<tamanho; j++)
+		{
+			quadrado.setPosition((400-tamanho/2*TAMANHOTILE)+j*TAMANHOTILE,(300-tamanho/2*TAMANHOTILE)+i*TAMANHOTILE);
+			window.draw(quadrado);
+
+			Text tile(intTOstring(mapa[i][j]), font, TAMANHOFONTE);
+			tile.setPosition((400-tamanho/2*TAMANHOTILE)+j*TAMANHOTILE+TAMANHOFONTE/2, (300-tamanho/2*TAMANHOTILE)+i*TAMANHOTILE+TAMANHOFONTE/2);
+			tile.setColor(Color(80, 80, 80));
+
+			window.draw(tile);
+
+			if(indice%tamanho==j && indice/tamanho==i)
+			{
+				quadrado.setFillColor(Color(255,0,0,100));
+				quadrado.setPosition((400-tamanho/2*TAMANHOTILE)+j*TAMANHOTILE,(300-tamanho/2*TAMANHOTILE)+i*TAMANHOTILE);
+				window.draw(quadrado);
+				quadrado.setFillColor(sf::Color::Transparent);
 			}
 		}
 
+	}
+
 }
 
-void telaSeis(RenderWindow &window, Data &media, int dificuldade)
+void preencherMapa(int **m, int tamanho)
 {
-	int tamanho = 6;
+	int val[16];
+	bool valbol[16];
 
+	for(int i=0; i<16; i++)
+	{
+		val[i]=i+1;
+		valbol[i]=true;
+	}
+
+	int aux=(rand()%tamanho);
+
+	for(int i = 0; i < tamanho; i++)
+	{
+		for(int j = 0; j < tamanho; j++)
+		{
+			if(valbol[aux])
+			{
+				if(validarLinha(m,tamanho,i,val[aux])&& validarColuna(m,tamanho,j,val[aux]) && validarQuadrado(m,tamanho,i,j,val[aux]))
+				{
+					m[i][j]=val[aux];
+					for(int i=0; i<16; i++)
+					{
+						valbol[i]=true;
+					}
+					aux=(rand()%tamanho);
+				}
+				else
+				{
+					valbol[aux]=false;
+					j--;
+					aux=(aux+1)%tamanho;
+				}
+			}
+			else
+			{
+				aux=(aux+1)%tamanho;
+				j--;
+				if(redefinir(valbol,tamanho))
+				{
+					for(int x=0; x<16; x++)
+					{
+						valbol[x]=true;
+						m[i][x]=0;
+					}
+					j=-1;
+				}
+			}
+		}
+	}
+}
+
+void adicionarDificuldade(int **mapa, int tamanho, int dificuldade)
+{
+	int porcentagem;
+	switch (dificuldade)
+	{
+	case 0:
+		porcentagem=2;
+		break;
+	case 1:
+		porcentagem=3;
+		break;
+	case 2:
+		porcentagem=10;
+		break;
+	default:
+		porcentagem=2;
+		break;
+	}
+	int itens =(tamanho*tamanho);
+	int permanecer=itens/porcentagem;
+	int apagar = itens-permanecer;
+
+	int linha=rand()%tamanho;
+	int coluna=rand()%tamanho;
+	for(int i=0; i<apagar; i++)
+	{
+		if(mapa[linha][coluna] > 0)
+		{
+			mapa[linha][coluna]=0;
+		}
+		else
+		{
+			linha=rand()%tamanho;
+			coluna=rand()%tamanho;
+			i--;
+		}
+	}
+
+
+}
+
+void telaTamanho(RenderWindow &window, Data &media, int dificuldade, int tamanho)
+{
+
+	if(tamanho==10)
+	{
+		tamanho=9;
+	}
 	int **m = new int*[256];
 	m[0] = new int[256*256];
 
@@ -504,7 +583,10 @@ void telaSeis(RenderWindow &window, Data &media, int dificuldade)
 		m[i] = m[i-1]+256;
 	}
 
-	preencherMapa(m,tamanho,dificuldade);
+	preencherMapa(m,tamanho);
+	adicionarDificuldade(m,tamanho,dificuldade);
+
+	int erros=0;
 
 	time_t tempo_inicial, tempo_atual, tempo_decorrido;
 
@@ -533,7 +615,7 @@ void telaSeis(RenderWindow &window, Data &media, int dificuldade)
 						media.musicas.ravel.stop();
 						telaMenu(window,media);
 					}
-					selecionarTile(window, tamanho,indice, m);
+					selecionarTile(window, tamanho,indice, m, media, erros);
 				break;
 
 				// we don't process other types of events
@@ -548,183 +630,7 @@ void telaSeis(RenderWindow &window, Data &media, int dificuldade)
 		window.clear();
 
 		window.draw(media.imagens.fundo_jogo);
-		desenharMapa(window, m , tamanho, indice, tempo_decorrido);
-
-		window.display();
-
-
-	}
-}
-
-void telaNove(RenderWindow &window, Data &media, int dificuldade)
-{
-	while(window.isOpen())
-	{
-		Event event;
-		// while there are pending events...
-
-		while (window.pollEvent(event))
-		{
-			// check the type of the event...
-			switch (event.type)
-			{
-				// window closed
-				case Event::Closed:
-					window.close();
-					break;
-
-				case Event::KeyPressed:
-					if( (Keyboard::isKeyPressed(Keyboard::Escape)) )
-						{
-							media.musicas.ravel.stop();
-							telaMenu(window,media);
-						}
-				break;
-
-				// we don't process other types of events
-				default:
-					break;
-			}
-
-		}
-
-
-
-		window.clear();
-
-		window.draw(media.imagens.fundo);
-
-		window.display();
-
-
-	}
-}
-
-void telaDoze(RenderWindow &window, Data &media, int dificuldade)
-{
-	while(window.isOpen())
-	{
-		Event event;
-		// while there are pending events...
-
-		while (window.pollEvent(event))
-		{
-			// check the type of the event...
-			switch (event.type)
-			{
-				// window closed
-				case Event::Closed:
-					window.close();
-					break;
-
-				case Event::KeyPressed:
-					if( (Keyboard::isKeyPressed(Keyboard::Escape)) )
-						{
-							media.musicas.ravel.stop();
-							telaMenu(window,media);
-						}
-				break;
-
-				// we don't process other types of events
-				default:
-					break;
-			}
-
-		}
-
-
-
-		window.clear();
-
-		window.draw(media.imagens.fundo);
-
-		window.display();
-
-
-	}
-}
-
-void telaDeze(RenderWindow &window, Data &media, int dificuldade)
-{
-	while(window.isOpen())
-	{
-		Event event;
-		// while there are pending events...
-
-		while (window.pollEvent(event))
-		{
-			// check the type of the event...
-			switch (event.type)
-			{
-				// window closed
-				case Event::Closed:
-					window.close();
-					break;
-
-				case Event::KeyPressed:
-					if( (Keyboard::isKeyPressed(Keyboard::Escape)) )
-						{
-							media.musicas.ravel.stop();
-							telaMenu(window,media);
-						}
-				break;
-
-				// we don't process other types of events
-				default:
-					break;
-			}
-
-		}
-
-
-
-		window.clear();
-
-		window.draw(media.imagens.fundo);
-
-		window.display();
-
-
-	}
-}
-
-void telaDiag(RenderWindow &window, Data &media, int dificuldade)
-{
-	while(window.isOpen())
-	{
-		Event event;
-		// while there are pending events...
-
-		while (window.pollEvent(event))
-		{
-			// check the type of the event...
-			switch (event.type)
-			{
-				// window closed
-				case Event::Closed:
-					window.close();
-					break;
-
-				case Event::KeyPressed:
-					if( (Keyboard::isKeyPressed(Keyboard::Escape)) )
-						{
-							media.musicas.ravel.stop();
-							telaMenu(window,media);
-						}
-				break;
-
-				// we don't process other types of events
-				default:
-					break;
-			}
-
-		}
-
-
-
-		window.clear();
-
-		window.draw(media.imagens.fundo);
+		desenharMapa(window, m , tamanho, indice, tempo_decorrido, erros);
 
 		window.display();
 
@@ -810,19 +716,19 @@ int tratamentoTeclas(RenderWindow &window, int &j, Data &media, int tipo)
 			switch(j)
 			{
 				case 0:
-					telaSeis(window, media, escolherDificuldade(window, media));
+					telaTamanho(window, media, escolherDificuldade(window, media),6);
 				break;
 				case 1:
-					telaNove(window, media, escolherDificuldade(window, media));
+					telaTamanho(window, media, escolherDificuldade(window, media),9);
 				break;
 				case 2:
-					telaDoze(window, media, escolherDificuldade(window, media));
+					telaTamanho(window, media, escolherDificuldade(window, media),12);
 				break;
 				case 3:
-					telaDeze(window, media, escolherDificuldade(window, media));
+					telaTamanho(window, media, escolherDificuldade(window, media),16);
 				break;
 				case 4:
-					telaDiag(window, media, escolherDificuldade(window, media));
+					telaTamanho(window, media, escolherDificuldade(window, media),10);
 				break;
 			}
 		}

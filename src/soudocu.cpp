@@ -45,6 +45,7 @@ struct SoundData{
 	Music ravel;
 	Music botao;
 	Music enter;
+	Music erro;
 };
 
 struct TextData{
@@ -84,6 +85,7 @@ void carregarSons(SoundData &musicas)
 	musicas.ravel.openFromFile("som/ravel.ogg");
 	musicas.botao.openFromFile("som/botao.ogg");
 	musicas.enter.openFromFile("som/metal.ogg");
+	musicas.erro.openFromFile("som/erro.ogg");
 }
 
 void carregarTextos(TextData &texto, int tipo)
@@ -390,7 +392,7 @@ void selecionarTile(RenderWindow &window, int tamanho,int &indice, int **mapa,Da
 		else
 		{
 			erros++;
-			media.musicas.enter.play();
+			media.musicas.erro.play();
 		}
 	}
 }
@@ -417,8 +419,8 @@ void desenharMapa(RenderWindow &window,int **mapa, int tamanho, int indice, int 
 
 	if(tamanho==16)
 	{
-		TAMANHOTILE=20;
-		TAMANHOFONTE=10;
+		TAMANHOTILE=30;
+		TAMANHOFONTE=15;
 	}
 	else
 	{

@@ -35,6 +35,7 @@ struct ImageData{
 	Sprite fundo_jogo;
 	Sprite botao;
 	Sprite botaoh;
+	Sprite load;
 };
 struct UserData{
 	string nome;
@@ -77,6 +78,10 @@ void carregarImagens(ImageData &imagens)
 	Texture *botaohTexture = new Texture;
 	botaohTexture->loadFromFile("img/botaoh.png");
 	imagens.botaoh.setTexture(*botaohTexture);
+
+	Texture *laodTexture = new Texture;
+	laodTexture->loadFromFile("img/load.png");
+	imagens.load.setTexture(*laodTexture);
 }
 
 void carregarSons(SoundData &musicas)
@@ -346,7 +351,7 @@ int lerTile(RenderWindow &window, int tamanho,int indice, int **mapa)
 	}
 }
 
-void selecionarTile(RenderWindow &window, int tamanho,int &indice, int **mapa,Data &media, int &erros)
+void selecionarTile(RenderWindow &window, int tamanho,int &indice, int **mapa, bool **bloc,Data &media, int &erros)
 {
 	if(Keyboard::isKeyPressed(Keyboard::Left))
 	{
@@ -384,15 +389,18 @@ void selecionarTile(RenderWindow &window, int tamanho,int &indice, int **mapa,Da
 	}
 	if(Keyboard::isKeyPressed(Keyboard::Return))
 	{
-		int val=lerTile(window, tamanho, indice, mapa);
-		if(val>0 && val<=tamanho)
+		if(!bloc[indice/tamanho][indice%tamanho])
 		{
-			mapa[indice/tamanho][indice%tamanho]=val;
-		}
-		else
-		{
-			erros++;
-			media.musicas.erro.play();
+			int val=lerTile(window, tamanho, indice, mapa);
+			if(val>0 && val<=tamanho)
+			{
+				mapa[indice/tamanho][indice%tamanho]=val;
+			}
+			else
+			{
+				erros++;
+				media.musicas.erro.play();
+			}
 		}
 	}
 }
@@ -413,7 +421,7 @@ string intTOstring(int number)
 	    return returnvalue;
 }
 
-void desenharMapa(RenderWindow &window,int **mapa, int tamanho, int indice, int tempo, int errados)
+void desenharMapa(RenderWindow &window,int **mapa,bool **bloc, int tamanho, int indice, int tempo, int errados)
 {
 	int TAMANHOTILE, TAMANHOFONTE;
 
@@ -456,10 +464,26 @@ void desenharMapa(RenderWindow &window,int **mapa, int tamanho, int indice, int 
 		{
 			quadrado.setPosition((400-tamanho/2*TAMANHOTILE)+j*TAMANHOTILE,(300-tamanho/2*TAMANHOTILE)+i*TAMANHOTILE);
 			window.draw(quadrado);
-
-			Text tile(intTOstring(mapa[i][j]), font, TAMANHOFONTE);
+			string texto;
+			if(mapa[i][j]>0)
+			{
+				texto = intTOstring(mapa[i][j]);
+			}
+			else
+			{
+				texto="";
+			}
+			Text tile(texto, font, TAMANHOFONTE);
 			tile.setPosition((400-tamanho/2*TAMANHOTILE)+j*TAMANHOTILE+TAMANHOFONTE/2, (300-tamanho/2*TAMANHOTILE)+i*TAMANHOTILE+TAMANHOFONTE/2);
-			tile.setColor(Color(80, 80, 80));
+			if(bloc[i][j])
+			{
+				tile.setColor(Color(80, 80, 80));
+			}
+			else
+			{
+				tile.setColor(Color::Blue);
+			}
+
 
 			window.draw(tile);
 
@@ -475,9 +499,25 @@ void desenharMapa(RenderWindow &window,int **mapa, int tamanho, int indice, int 
 	}
 
 }
-
-void preencherMapa(int **m, int tamanho)
+void telaCarregamento(RenderWindow &window, Data &media)
 {
+	media.imagens.load.setOrigin(64,64);
+	media.imagens.load.setPosition(400,300);
+	media.imagens.load.rotate(5);
+	window.draw(media.imagens.fundo_jogo);
+
+	window.draw(media.imagens.load);
+
+	window.display();
+}
+
+void preencherMapa(int **m, int tamanho, RenderWindow &window, Data &media)
+{
+
+	time_t tempo_inicial, tempo_atual, tempo_decorrido;
+
+	time(&tempo_inicial);
+
 	int val[16];
 	bool valbol[16];
 
@@ -488,12 +528,19 @@ void preencherMapa(int **m, int tamanho)
 	}
 
 	int aux=(rand()%tamanho);
-
 	int resets=0;
 	for(int i = 0; i < tamanho; i++)
 	{
 		for(int j = 0; j < tamanho; j++)
 		{
+			time(&tempo_atual);
+			tempo_decorrido=(tempo_atual-tempo_inicial);
+
+			if(tempo_decorrido%300==0)
+			{
+				telaCarregamento(window, media);
+			}
+
 			if(valbol[aux])
 			{
 				if(validarLinha(m,tamanho,i,val[aux])&& validarColuna(m,tamanho,j,val[aux]) && validarQuadrado(m,tamanho,i,j,val[aux]))
@@ -525,13 +572,10 @@ void preencherMapa(int **m, int tamanho)
 					}
 					resets++;
 					j=-1;
-					cout<<resets<<endl;
 					if(resets>1000)
 					{
-						srand(time(NULL));
-						cout<<"reset";
-						i=0;
-						j=0;
+						i=-1;
+						j=-1;
 						resets=0;
 						for(int i2 = 0; i2 < tamanho; i2++)
 						{
@@ -540,6 +584,7 @@ void preencherMapa(int **m, int tamanho)
 								m[i2][j2]=0;
 							}
 						}
+						break;
 					}
 				}
 			}
@@ -548,7 +593,7 @@ void preencherMapa(int **m, int tamanho)
 
 }
 
-void adicionarDificuldade(int **mapa, int tamanho, int dificuldade)
+void adicionarDificuldade(int **mapa, bool **b, int tamanho, int dificuldade)
 {
 	int porcentagem;
 	switch (dificuldade)
@@ -577,6 +622,7 @@ void adicionarDificuldade(int **mapa, int tamanho, int dificuldade)
 		if(mapa[linha][coluna] > 0)
 		{
 			mapa[linha][coluna]=0;
+			b[linha][coluna]=false;
 		}
 		else
 		{
@@ -596,16 +642,34 @@ void telaTamanho(RenderWindow &window, Data &media, int dificuldade, int tamanho
 	{
 		tamanho=9;
 	}
-	int **m = new int*[256];
-	m[0] = new int[256*256];
+	int **m = new int*[20];
+	m[0] = new int[20*20];
 
-	for (int i=1; i<256; i++)
+	for (int i=1; i<20; i++)
 	{
 		m[i] = m[i-1]+20;
 	}
 
-	preencherMapa(m,tamanho);
-	adicionarDificuldade(m,tamanho,dificuldade);
+	bool **b = new bool*[20];
+	b[0] = new bool[20*20];
+
+	for (int i=1; i<20; i++)
+	{
+		b[i] = b[i-1]+20;
+	}
+
+
+	for(int i=0;i<20;i++)
+	{
+		for(int j=0;j<20;j++)
+		{
+			b[i][j]=true;
+		}
+
+	}
+
+	preencherMapa(m,tamanho, window, media);
+	adicionarDificuldade(m,b,tamanho,dificuldade);
 
 	int erros=0;
 
@@ -636,7 +700,7 @@ void telaTamanho(RenderWindow &window, Data &media, int dificuldade, int tamanho
 						media.musicas.ravel.stop();
 						telaMenu(window,media);
 					}
-					selecionarTile(window, tamanho,indice, m, media, erros);
+					selecionarTile(window, tamanho,indice, m,b, media, erros);
 				break;
 
 				// we don't process other types of events
@@ -651,7 +715,7 @@ void telaTamanho(RenderWindow &window, Data &media, int dificuldade, int tamanho
 		window.clear();
 
 		window.draw(media.imagens.fundo_jogo);
-		desenharMapa(window, m , tamanho, indice, tempo_decorrido, erros);
+		desenharMapa(window, m , b, tamanho, indice, tempo_decorrido, erros);
 
 		window.display();
 

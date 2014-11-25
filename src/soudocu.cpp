@@ -497,7 +497,10 @@ string intTOstring(int number)
 	        number/=10;
 	    }
 	    for (int i=0;i<temp.length();i++)
-	        returnvalue+=temp[temp.length()-i-1];
+	    {
+	    	 returnvalue+=temp[temp.length()-i-1];
+	    }
+
 	    return returnvalue;
 }
 
@@ -1024,7 +1027,63 @@ void telaRank(RenderWindow &window, Data &media)
 		}
 		lerArquivo(tamanho,media);
 		desenharRank(window, media, 300, 100, tamanho);
+	}
+}
 
+void telaFim(RenderWindow &window, Data &media, bool venceu)
+{
+	Font font;
+	font.loadFromFile("font/sansation.ttf");
+
+	string texto;
+	if(venceu)
+	{
+		texto="Você Venceu!";
+	}
+	else
+	{
+		texto="Você Perdeu.";
+	}
+
+	Text conteudo(texto, font, 60);
+	conteudo.setPosition(225, 250);
+	conteudo.setColor(Color(80, 80, 80));
+	while(window.isOpen())
+	{
+		Event event;
+		// while there are pending events...
+
+		while (window.pollEvent(event))
+		{
+			// check the type of the event...
+			switch (event.type)
+			{
+				// window closed
+				case Event::Closed:
+					window.close();
+					break;
+
+				case Event::KeyPressed:
+
+					if( (Keyboard::isKeyPressed(Keyboard::Escape)) )
+					{
+						media.musicas.ravel.stop();
+						telaMenu(window,media);
+					}
+				break;
+
+				// we don't process other types of events
+				default:
+					break;
+			}
+
+		}
+
+
+		window.draw(media.imagens.fundo_jogo);
+		window.draw(conteudo);
+
+		window.display();
 
 	}
 }
@@ -1058,6 +1117,8 @@ void telaTamanho(RenderWindow &window, Data &media, int dificuldade, int tam)
 		}
 
 	}
+
+	bool venceu=false;
 	bool diag=false;
 	preencherMapa(m,tamanho, window, media, diag);
 	adicionarDificuldade(m,b,tamanho,dificuldade);
@@ -1091,18 +1152,6 @@ void telaTamanho(RenderWindow &window, Data &media, int dificuldade, int tam)
 						media.musicas.ravel.stop();
 						telaMenu(window,media);
 					}
-					if((Keyboard::isKeyPressed(Keyboard::F1)))
-					{
-						if(validarRank(tamanho, tempo_decorrido, media, diag))
-						{
-							telaRank(window, media);
-						}
-						else
-						{
-							telaMenu(window, media);
-							//telaVenceu(window, media);
-						}
-					}
 					selecionarTile(window, tamanho,indice, m,b, media, erros, diag);
 				break;
 
@@ -1123,19 +1172,22 @@ void telaTamanho(RenderWindow &window, Data &media, int dificuldade, int tam)
 
 		window.display();
 
+		if(erros>20)
+		{
+			telaFim(window, media,venceu);
+		}
 		if(testarVenceu(m, tamanho))
 		{
+			venceu=true;
 			if(validarRank(tamanho, tempo_decorrido, media, diag))
 			{
 				telaRank(window, media);
 			}
 			else
 			{
-				telaMenu(window, media);
-				//telaVenceu(window, media);
+				telaFim(window, media,venceu);
 			}
 		}
-
 	}
 }
 

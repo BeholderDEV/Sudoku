@@ -121,10 +121,30 @@ void telaModos(RenderWindow &window, Data &media);
 int tratamentoTeclas(RenderWindow &window, int &j, Data &media, int tipo);
 void desenharBotoes(RenderWindow &window, Data &media, int j, int indice);
 
-void lerArquivo(int modo, Data &media)
+void lerArquivo(int tamanho, Data &media)
 {
 	ifstream leitura;
-	leitura.open("rank/6x6.rank");
+
+	switch(tamanho)
+	{
+	case 6:
+		leitura.open("rank/6x6.rank");
+		break;
+	case 9:
+		leitura.open("rank/9x9.rank");
+		break;
+	case 12:
+		leitura.open("rank/12x12.rank");
+		break;
+	case 16:
+		leitura.open("rank/16x16.rank");
+		break;
+	case 10:
+		leitura.open("rank/diagxdiag.rank");
+		break;
+
+	}
+
 
 	char *temp;
 
@@ -144,10 +164,29 @@ void lerArquivo(int modo, Data &media)
 	leitura.close();
 }
 
-void escreverArquivo(int modo, Data &media)
+void escreverArquivo(int tamanho, Data &media)
 {
 	ofstream escrita;
-	escrita.open("rank/6x62.rank");
+
+	switch(tamanho)
+		{
+		case 6:
+			escrita.open("rank/6x6.rank");
+			break;
+		case 9:
+			escrita.open("rank/9x9.rank");
+			break;
+		case 12:
+			escrita.open("rank/12x12.rank");
+			break;
+		case 16:
+			escrita.open("rank/16x16.rank");
+			break;
+		case 10:
+			escrita.open("rank/diagxdiag.rank");
+			break;
+
+		}
 
 	for(int i=0; i<5; i++)
 	{
@@ -178,6 +217,27 @@ bool validarColuna(int **m, int tamanho, int coluna, int valor)
 		{
 			return false;
 		}
+	}
+	return true;
+}
+bool validarDiagonal(int **m, int tamanho,int linha, int coluna, int valor)
+{
+	if(linha==coluna || linha+coluna==tamanho-1)
+	{
+		for(int i=0; i<tamanho;i++)
+		{
+			for(int j=0; j<tamanho;j++)
+			{
+				if(i==j || i+j==tamanho-1)
+				{
+					if(m[i][j]==m[linha][coluna])
+					{
+						return false;
+					}
+				}
+			}
+		}
+		return true;
 	}
 	return true;
 }
@@ -299,7 +359,7 @@ int escolherDificuldade(RenderWindow &window, Data &media)
 	}
 }
 
-int lerTile(RenderWindow &window, int tamanho,int indice, int **mapa)
+int lerTile(RenderWindow &window, int tamanho,int indice, int **mapa,bool diag)
 {
 	Event event;
 	string valor="";
@@ -320,7 +380,16 @@ int lerTile(RenderWindow &window, int tamanho,int indice, int **mapa)
 					if( (Keyboard::isKeyPressed(Keyboard::Return)) )
 					{
 						int val=atoi(valor.c_str());
-						if(validarColuna(mapa,tamanho,indice%tamanho,val) && validarLinha(mapa,tamanho,indice/tamanho,val) && validarQuadrado(mapa,tamanho,indice/tamanho,indice%tamanho, val))
+						bool valido;
+						if(diag)
+						{
+							valido=validarColuna(mapa,tamanho,indice%tamanho,val) && validarLinha(mapa,tamanho,indice/tamanho,val) && validarQuadrado(mapa,tamanho,indice/tamanho,indice%tamanho, val) && validarDiagonal(mapa,tamanho,indice/tamanho,indice%tamanho, val);
+						}
+						else
+						{
+							valido=validarColuna(mapa,tamanho,indice%tamanho,val) && validarLinha(mapa,tamanho,indice/tamanho,val) && validarQuadrado(mapa,tamanho,indice/tamanho,indice%tamanho, val);
+						}
+						if(valido)
 						{
 							return val;
 						}
@@ -351,7 +420,7 @@ int lerTile(RenderWindow &window, int tamanho,int indice, int **mapa)
 	}
 }
 
-void selecionarTile(RenderWindow &window, int tamanho,int &indice, int **mapa, bool **bloc,Data &media, int &erros)
+void selecionarTile(RenderWindow &window, int tamanho,int &indice, int **mapa, bool **bloc,Data &media, int &erros, bool diag)
 {
 	if(Keyboard::isKeyPressed(Keyboard::Left))
 	{
@@ -391,7 +460,7 @@ void selecionarTile(RenderWindow &window, int tamanho,int &indice, int **mapa, b
 	{
 		if(!bloc[indice/tamanho][indice%tamanho])
 		{
-			int val=lerTile(window, tamanho, indice, mapa);
+			int val=lerTile(window, tamanho, indice, mapa, diag);
 			if(val>0 && val<=tamanho)
 			{
 				mapa[indice/tamanho][indice%tamanho]=val;
@@ -540,9 +609,8 @@ void desenharMapa(RenderWindow &window,int **mapa,bool **bloc, int tamanho, int 
 			}
 		}
 	}
-
-
 }
+
 void telaCarregamento(RenderWindow &window, Data &media)
 {
 	media.imagens.load.setOrigin(64,64);
@@ -555,16 +623,19 @@ void telaCarregamento(RenderWindow &window, Data &media)
 	window.display();
 }
 
-void preencherMapa(int **m, int tamanho, RenderWindow &window, Data &media)
+void preencherMapa(int **m, int &tamanho, RenderWindow &window, Data &media, bool &diag)
 {
-
 	time_t tempo_inicial, tempo_atual, tempo_decorrido;
 
 	time(&tempo_inicial);
 
 	int val[16];
 	bool valbol[16];
-
+	if(tamanho==10)
+	{
+		tamanho=9;
+		diag=true;
+	}
 	for(int i=0; i<16; i++)
 	{
 		val[i]=i+1;
@@ -587,7 +658,17 @@ void preencherMapa(int **m, int tamanho, RenderWindow &window, Data &media)
 
 			if(valbol[aux])
 			{
-				if(validarLinha(m,tamanho,i,val[aux])&& validarColuna(m,tamanho,j,val[aux]) && validarQuadrado(m,tamanho,i,j,val[aux]))
+				bool valido;
+				if(diag)
+				{
+					valido=validarLinha(m,tamanho,i,val[aux])&& validarColuna(m,tamanho,j,val[aux]) && validarQuadrado(m,tamanho,i,j,val[aux]) && validarDiagonal(m,tamanho,i,j,val[aux]);
+				}
+				else
+				{
+					valido=validarLinha(m,tamanho,i,val[aux])&& validarColuna(m,tamanho,j,val[aux]) && validarQuadrado(m,tamanho,i,j,val[aux]);
+				}
+
+				if(valido)
 				{
 					m[i][j]=val[aux];
 					for(int i=0; i<16; i++)
@@ -675,17 +756,180 @@ void adicionarDificuldade(int **mapa, bool **b, int tamanho, int dificuldade)
 			i--;
 		}
 	}
-
-
 }
 
-void telaTamanho(RenderWindow &window, Data &media, int dificuldade, int tamanho)
+bool testarVenceu(int **m, int tamanho)
+{
+	for(int i=0; i<tamanho; i++)
+	{
+		for(int j=0; j<tamanho; j++)
+		{
+			if(m[i][j]==0)
+			{
+				return false;
+			}
+		}
+	}
+	return true;
+}
+
+bool validarRank(int tamanho,time_t tempo_decorrido,Data &media)
+{
+	lerArquivo(tamanho, media);
+	for(int i=0;i<5;i++)
+	{
+		if(media.rank.usuario[i].tempo > tempo_decorrido)
+		{
+			for(int j=4; j>i; j--)
+			{
+				media.rank.usuario[j].tempo=media.rank.usuario[j-1].tempo;
+				media.rank.usuario[j].nome=media.rank.usuario[j-1].nome;
+			}
+			media.rank.usuario[i].tempo=tempo_decorrido;
+			media.rank.usuario[i].nome=media.usuario.nome;
+			escreverArquivo(tamanho, media);
+			return true;
+		}
+	}
+	return false;
+}
+
+void desenharRank(RenderWindow &window, Data &media,int x, int y, int tamanho)
+{
+	Font font;
+	font.loadFromFile("font/sansation.ttf");
+
+	window.draw(media.imagens.fundo_jogo);
+
+	string tam =intTOstring(tamanho);
+	string titulo;
+	int newx;
+	if(tamanho!=10)
+	{
+		titulo = tam + " x " +  tam ;
+		if(tamanho<10)
+		{
+			newx=x+70;
+		}
+		else
+		{
+			newx=x+60;
+		}
+	}
+	else
+	{
+		titulo = "Diagonal";
+		newx=x+30;
+	}
+
+	Text title(titulo, font, 50);
+	title.setPosition(newx, y);
+	title.setColor(Color::Yellow);
+
+	window.draw(title);
+
+	y+=80;
+	for(int i=0; i<5; i++)
+	{
+		Text nome(media.rank.usuario[i].nome, font, 30);
+		nome.setPosition(x, y);
+		nome.setColor(Color(80, 80, 80));
+
+		string time= "";
+		time = intTOstring(media.rank.usuario[i].tempo);
+		Text temp(time, font, 30);
+		temp.setPosition(x+ 200, y);
+		temp.setColor(Color(80, 80, 80));
+
+
+		window.draw(nome);
+		window.draw(temp);
+		y+=60;
+	}
+	window.display();
+}
+
+void telaRank(RenderWindow &window, Data &media)
+{
+	int modo=0;
+
+	while(window.isOpen())
+	{
+		Event event;
+		// while there are pending events...
+
+		while (window.pollEvent(event))
+		{
+			// check the type of the event...
+			switch (event.type)
+			{
+				// window closed
+				case Event::Closed:
+					window.close();
+					break;
+
+				case Event::KeyPressed:
+
+					if( (Keyboard::isKeyPressed(Keyboard::Escape)) )
+					{
+						media.musicas.ravel.stop();
+						telaMenu(window,media);
+					}
+					if( (Keyboard::isKeyPressed(Keyboard::Left)) )
+					{
+						modo--;
+						if(modo<0)
+						{
+							modo=4;
+						}
+					}
+					if( (Keyboard::isKeyPressed(Keyboard::Right)) )
+					{
+						modo++;
+						if(modo>4)
+						{
+							modo=0;
+						}
+					}
+				break;
+
+				// we don't process other types of events
+				default:
+					break;
+			}
+
+		}
+
+		int tamanho;
+		switch (modo)
+		{
+		case 0:
+			tamanho=6;
+			break;
+		case 1:
+			tamanho=9;
+			break;
+		case 2:
+			tamanho=12;
+			break;
+		case  3:
+			tamanho=16;
+			break;
+		case 4:
+			tamanho=10;
+			break;
+		}
+		lerArquivo(tamanho,media);
+		desenharRank(window, media, 300, 100, tamanho);
+
+
+	}
+}
+
+void telaTamanho(RenderWindow &window, Data &media, int dificuldade, int tam)
 {
 
-	if(tamanho==10)
-	{
-		tamanho=9;
-	}
+	int tamanho=tam;
 	int **m = new int*[20];
 	m[0] = new int[20*20];
 
@@ -711,8 +955,8 @@ void telaTamanho(RenderWindow &window, Data &media, int dificuldade, int tamanho
 		}
 
 	}
-
-	preencherMapa(m,tamanho, window, media);
+	bool diag=false;
+	preencherMapa(m,tamanho, window, media, diag);
 	adicionarDificuldade(m,b,tamanho,dificuldade);
 
 	int erros=0;
@@ -744,7 +988,19 @@ void telaTamanho(RenderWindow &window, Data &media, int dificuldade, int tamanho
 						media.musicas.ravel.stop();
 						telaMenu(window,media);
 					}
-					selecionarTile(window, tamanho,indice, m,b, media, erros);
+					if((Keyboard::isKeyPressed(Keyboard::F1)))
+					{
+						if(validarRank(tamanho, tempo_decorrido, media))
+						{
+							telaRank(window, media);
+						}
+						else
+						{
+							telaMenu(window, media);
+							//telaVenceu(window, media);
+						}
+					}
+					selecionarTile(window, tamanho,indice, m,b, media, erros, diag);
 				break;
 
 				// we don't process other types of events
@@ -761,16 +1017,23 @@ void telaTamanho(RenderWindow &window, Data &media, int dificuldade, int tamanho
 		window.draw(media.imagens.fundo_jogo);
 		desenharMapa(window, m , b, tamanho, indice, tempo_decorrido, erros);
 
+
 		window.display();
 
+		if(testarVenceu(m, tamanho))
+		{
+			if(validarRank(tamanho, tempo_decorrido, media))
+			{
+				telaRank(window, media);
+			}
+			else
+			{
+				telaMenu(window, media);
+				//telaVenceu(window, media);
+			}
+		}
 
 	}
-}
-
-void telaRank(RenderWindow &window, Data &media)
-{
-	lerArquivo(1,media);
-	escreverArquivo(1,media);
 }
 
 int tratamentoTeclas(RenderWindow &window, int &j, Data &media, int tipo)
@@ -1116,7 +1379,6 @@ int main()
 
 	telaUsuario(window, media);
 	telaMenu(window, media);
-
 
 	return 0;
 }

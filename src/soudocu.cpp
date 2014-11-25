@@ -228,9 +228,16 @@ bool validarDiagonal(int **m, int tamanho,int linha, int coluna, int valor)
 		{
 			for(int j=0; j<tamanho;j++)
 			{
-				if(i==j || i+j==tamanho-1)
+				if((i==j && linha==coluna) && (i!=linha && j!=coluna))
 				{
-					if(m[i][j] == m[linha][coluna])
+					if(m[i][j] == valor)
+					{
+						return false;
+					}
+				}
+				if((i+j==tamanho-1 && linha+coluna==tamanho-1) && (i!=linha && j!=coluna))
+				{
+					if(m[i][j] == valor)
 					{
 						return false;
 					}
@@ -622,20 +629,6 @@ void telaCarregamento(RenderWindow &window, Data &media)
 
 	window.display();
 }
-void printarmatriz(int **m)
-{
-	for(int i=0; i<9; i++)
-	{
-		for(int j=0; j<9; j++)
-		{
-			cout<<m[i][j]<<"\t";
-		}
-		cout<<endl;
-	}
-	cout<<endl;
-	cout<<endl;
-	cout<<endl;
-}
 void preencherDiagonais(int **m, int tamanho)
 {
 	int val[16];
@@ -648,18 +641,21 @@ void preencherDiagonais(int **m, int tamanho)
 	}
 
 	int aux=(rand()%tamanho);
+
 	int resets=0;
 
 	for(int i=0; i<tamanho; i++)
 	{
 		for(int j=0; j<tamanho; j++)
 		{
+
 			if(i==j || i+j==tamanho-1)
 			{
 				if(valbol[aux])
 				{
 					bool valido;
-					valido=validarLinha(m,tamanho,i,val[aux])&& validarColuna(m,tamanho,j,val[aux]) && validarQuadrado(m,tamanho,i,j,val[aux]) && validarDiagonal(m,tamanho,i,j,val[aux]);
+
+					valido = validarLinha(m,tamanho,i,val[aux])&& validarColuna(m,tamanho,j,val[aux]) && validarQuadrado(m,tamanho,i,j,val[aux]) && validarDiagonal(m,tamanho,i,j,val[aux]);
 
 					if(valido)
 					{
@@ -734,7 +730,6 @@ void preencherMapa(int **m, int &tamanho, RenderWindow &window, Data &media, boo
 	if(diag)
 	{
 		preencherDiagonais(m, tamanho);
-		cout<<"diags"<<endl;
 	}
 	for(int i = 0; i < tamanho; i++)
 	{
@@ -800,6 +795,10 @@ void preencherMapa(int **m, int &tamanho, RenderWindow &window, Data &media, boo
 							{
 								m[i2][j2]=0;
 							}
+						}
+						if(diag)
+						{
+							preencherDiagonais(m, tamanho);
 						}
 						break;
 					}
@@ -1112,18 +1111,18 @@ void telaTamanho(RenderWindow &window, Data &media, int dificuldade, int tam)
 
 		window.display();
 
-		if(testarVenceu(m, tamanho))
-		{
-			if(validarRank(tamanho, tempo_decorrido, media))
-			{
-				telaRank(window, media);
-			}
-			else
-			{
-				telaMenu(window, media);
-				//telaVenceu(window, media);
-			}
-		}
+		//if(testarVenceu(m, tamanho))
+		//{
+		//	if(validarRank(tamanho, tempo_decorrido, media))
+		//	{
+		//		telaRank(window, media);
+		//	}
+		//	else
+		//	{
+		//		telaMenu(window, media);
+		//		//telaVenceu(window, media);
+		//	}
+		//}
 
 	}
 }

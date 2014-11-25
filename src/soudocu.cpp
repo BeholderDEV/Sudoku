@@ -164,8 +164,12 @@ void lerArquivo(int tamanho, Data &media)
 	leitura.close();
 }
 
-void escreverArquivo(int tamanho, Data &media)
+void escreverArquivo(int tamanho, Data &media, bool diag)
 {
+	if(diag)
+	{
+		tamanho=10;
+	}
 	ofstream escrita;
 
 	switch(tamanho)
@@ -864,9 +868,17 @@ bool testarVenceu(int **m, int tamanho)
 	return true;
 }
 
-bool validarRank(int tamanho,time_t tempo_decorrido,Data &media)
+bool validarRank(int tamanho,time_t tempo_decorrido,Data &media, bool diag)
 {
-	lerArquivo(tamanho, media);
+	if(diag)
+	{
+		lerArquivo(10, media);
+	}
+	else
+	{
+		lerArquivo(tamanho, media);
+	}
+
 	for(int i=0;i<5;i++)
 	{
 		if(media.rank.usuario[i].tempo > tempo_decorrido)
@@ -878,7 +890,7 @@ bool validarRank(int tamanho,time_t tempo_decorrido,Data &media)
 			}
 			media.rank.usuario[i].tempo=tempo_decorrido;
 			media.rank.usuario[i].nome=media.usuario.nome;
-			escreverArquivo(tamanho, media);
+			escreverArquivo(tamanho, media, diag);
 			return true;
 		}
 	}
@@ -1081,7 +1093,7 @@ void telaTamanho(RenderWindow &window, Data &media, int dificuldade, int tam)
 					}
 					if((Keyboard::isKeyPressed(Keyboard::F1)))
 					{
-						if(validarRank(tamanho, tempo_decorrido, media))
+						if(validarRank(tamanho, tempo_decorrido, media, diag))
 						{
 							telaRank(window, media);
 						}
@@ -1111,18 +1123,18 @@ void telaTamanho(RenderWindow &window, Data &media, int dificuldade, int tam)
 
 		window.display();
 
-		//if(testarVenceu(m, tamanho))
-		//{
-		//	if(validarRank(tamanho, tempo_decorrido, media))
-		//	{
-		//		telaRank(window, media);
-		//	}
-		//	else
-		//	{
-		//		telaMenu(window, media);
-		//		//telaVenceu(window, media);
-		//	}
-		//}
+		if(testarVenceu(m, tamanho))
+		{
+			if(validarRank(tamanho, tempo_decorrido, media, diag))
+			{
+				telaRank(window, media);
+			}
+			else
+			{
+				telaMenu(window, media);
+				//telaVenceu(window, media);
+			}
+		}
 
 	}
 }

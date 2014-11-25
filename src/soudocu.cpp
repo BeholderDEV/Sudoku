@@ -230,7 +230,7 @@ bool validarDiagonal(int **m, int tamanho,int linha, int coluna, int valor)
 			{
 				if(i==j || i+j==tamanho-1)
 				{
-					if(m[i][j]==m[linha][coluna])
+					if(m[i][j] == m[linha][coluna])
 					{
 						return false;
 					}
@@ -622,6 +622,93 @@ void telaCarregamento(RenderWindow &window, Data &media)
 
 	window.display();
 }
+void printarmatriz(int **m)
+{
+	for(int i=0; i<9; i++)
+	{
+		for(int j=0; j<9; j++)
+		{
+			cout<<m[i][j]<<"\t";
+		}
+		cout<<endl;
+	}
+	cout<<endl;
+	cout<<endl;
+	cout<<endl;
+}
+void preencherDiagonais(int **m, int tamanho)
+{
+	int val[16];
+	bool valbol[16];
+
+	for(int i=0; i<16; i++)
+	{
+		val[i]=i+1;
+		valbol[i]=true;
+	}
+
+	int aux=(rand()%tamanho);
+	int resets=0;
+
+	for(int i=0; i<tamanho; i++)
+	{
+		for(int j=0; j<tamanho; j++)
+		{
+			if(i==j || i+j==tamanho-1)
+			{
+				if(valbol[aux])
+				{
+					bool valido;
+					valido=validarLinha(m,tamanho,i,val[aux])&& validarColuna(m,tamanho,j,val[aux]) && validarQuadrado(m,tamanho,i,j,val[aux]) && validarDiagonal(m,tamanho,i,j,val[aux]);
+
+					if(valido)
+					{
+						m[i][j]=val[aux];
+						for(int i=0; i<16; i++)
+						{
+							valbol[i]=true;
+						}
+						aux=(rand()%tamanho);
+					}
+					else
+					{
+						valbol[aux]=false;
+						j--;
+						aux=(aux+1)%tamanho;
+					}
+				}
+				else
+				{
+					aux=(aux+1)%tamanho;
+					j--;
+					if(redefinir(valbol,tamanho))
+					{
+						for(int x=0; x<16; x++)
+						{
+							valbol[x]=true;
+							m[i][x]=0;
+						}
+						resets++;
+						if(resets>1000)
+						{
+							i=-1;
+							j=-1;
+							resets=0;
+							for(int i2 = 0; i2 < tamanho; i2++)
+							{
+								for(int j2 = 0; j2 < tamanho; j2++)
+								{
+									m[i2][j2]=0;
+								}
+							}
+							break;
+						}
+					}
+				}
+			}
+		}
+	}
+}
 
 void preencherMapa(int **m, int &tamanho, RenderWindow &window, Data &media, bool &diag)
 {
@@ -644,6 +731,11 @@ void preencherMapa(int **m, int &tamanho, RenderWindow &window, Data &media, boo
 
 	int aux=(rand()%tamanho);
 	int resets=0;
+	if(diag)
+	{
+		preencherDiagonais(m, tamanho);
+		cout<<"diags"<<endl;
+	}
 	for(int i = 0; i < tamanho; i++)
 	{
 		for(int j = 0; j < tamanho; j++)
@@ -1345,9 +1437,6 @@ void telaUsuario(RenderWindow &window, Data &media)
 
 
 		window.draw(media.imagens.fundo);
-
-
-
 
 		Text nome(media.usuario.nome, font, 30);
 		nome.setPosition(400 - nome.getLocalBounds().width/2, 300);

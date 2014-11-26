@@ -21,6 +21,10 @@
 using namespace std;
 using namespace sf;
 
+struct Dicatype{
+	int dica;
+	bool trocar;
+};
 struct RankUser{
 	string nome;
 	int tempo;
@@ -51,6 +55,7 @@ struct SoundData{
 
 struct TextData{
 	string modos[5];
+	string dicas[10];
 };
 
 struct Data{
@@ -99,6 +104,17 @@ void carregarTextos(TextData &texto, int tipo)
 	{
 		texto.modos[0]="Jogo";
 		texto.modos[1]="Rank";
+
+		texto.dicas[0]="É um país da europa";
+		texto.dicas[1]="O nivel de dificuldade pode te dar bonus de tempo";
+		texto.dicas[2]="O nivel de dificuldade pode melhorar sua colocação";
+		texto.dicas[3]="ESC para retornar ao menu";
+		texto.dicas[4]="Seu idioma é o Holandês";
+		texto.dicas[5]="ESC para retornar ao menu";
+		texto.dicas[6]="Escrevi e sai correndo pau no cu de quem ta lendo";
+		texto.dicas[7]="O nivel de dificuldade pode melhorar sua colocação";
+		texto.dicas[8]="Terra das flores e dos moinhos de vento";
+		texto.dicas[9]="Venceu o Brasil na copa de 2010";
 	}
 	if(tipo == MODOS)
 	{
@@ -114,6 +130,7 @@ void carregarTextos(TextData &texto, int tipo)
 		texto.modos[1]="Médio ";
 		texto.modos[2]="Difícil";
 	}
+
 
 }
 void telaMenu(RenderWindow &window, Data &media);
@@ -144,7 +161,6 @@ void lerArquivo(int tamanho, Data &media)
 		break;
 
 	}
-
 
 	char *temp;
 
@@ -504,7 +520,7 @@ string intTOstring(int number)
 	    return returnvalue;
 }
 
-void desenharMapa(RenderWindow &window,int **mapa,bool **bloc, int tamanho, int indice, int tempo, int errados)
+void desenharMapa(RenderWindow &window, TextData texto, int **mapa,bool **bloc, int tamanho, int indice, int tempo, int errados, int coeficienteDificuldade, Dicatype &dica)
 {
 	int quadx, quady;
 
@@ -559,13 +575,54 @@ void desenharMapa(RenderWindow &window,int **mapa,bool **bloc, int tamanho, int 
 	erros.setPosition(700, 550);
 	erros.setColor(Color::Red);
 
+	string soma= "+ ";
+	soma += intTOstring(errados*coeficienteDificuldade);
+	Text somado(soma, font, 20);
+	somado.setPosition(685, 70);
+	somado.setColor(Color::Red);
+
+	if(tempo%10==0)
+	{
+		if(dica.trocar)
+		{
+			int aux=dica.dica;
+			while(aux==dica.dica)
+			{
+				dica.dica = rand()%10;
+			}
+			dica.trocar=false;
+		}
+	}
+	else
+	{
+		dica.trocar=true;
+	}
+
+	string text="Dica: ";
+	text+=texto.dicas[dica.dica];
+	Text dicas(text, font, 20);
+	//dicas.setPosition(0, 550);
+	dicas.setPosition(400 - dicas.getLocalBounds().width/2, 550);
+	dicas.setColor(Color::Blue);
+
 	window.draw(erros);
+	window.draw(somado);
+	window.draw(dicas);
 
 	RectangleShape quadradog;
 	quadradog.setSize(Vector2f(TAMANHOTILE*quadx, TAMANHOTILE*quady));
-	quadradog.setOutlineThickness(1);
-	quadradog.setOutlineColor(sf::Color::Red);
+	quadradog.setOutlineThickness(2);
+	quadradog.setOutlineColor(sf::Color::Black);
+	//quadradog.setOutlineColor(sf::Color::Red);
 	quadradog.setFillColor(sf::Color::Transparent);
+
+	RectangleShape quadradofull;
+	quadradofull.setSize(Vector2f(TAMANHOTILE*tamanho, TAMANHOTILE*tamanho));
+	quadradofull.setOutlineThickness(4);
+	quadradofull.setOutlineColor(sf::Color::Black);
+	//quadradofull.setOutlineColor(sf::Color::Red);
+	quadradofull.setFillColor(sf::Color::Transparent);
+	quadradofull.setPosition((400-tamanho/2*TAMANHOTILE), (300-tamanho/2*TAMANHOTILE));
 
 	RectangleShape quadrado;
 	quadrado.setSize(Vector2f(TAMANHOTILE, TAMANHOTILE));
@@ -623,6 +680,7 @@ void desenharMapa(RenderWindow &window,int **mapa,bool **bloc, int tamanho, int 
 			}
 		}
 	}
+	window.draw(quadradofull);
 }
 
 void telaCarregamento(RenderWindow &window, Data &media)
@@ -871,7 +929,7 @@ bool testarVenceu(int **m, int tamanho)
 	return true;
 }
 
-bool validarRank(int tamanho,time_t tempo_decorrido,Data &media, bool diag)
+bool validarRank(int tamanho,int tempo_decorrido,Data &media, bool diag)
 {
 	if(diag)
 	{
@@ -1090,7 +1148,7 @@ void telaFim(RenderWindow &window, Data &media, bool venceu)
 
 void telaTamanho(RenderWindow &window, Data &media, int dificuldade, int tam)
 {
-
+	int coeficienteDificuldade=3-dificuldade;
 	int tamanho=tam;
 	int **m = new int*[20];
 	m[0] = new int[20*20];
@@ -1107,7 +1165,6 @@ void telaTamanho(RenderWindow &window, Data &media, int dificuldade, int tam)
 	{
 		b[i] = b[i-1]+20;
 	}
-
 
 	for(int i=0;i<20;i++)
 	{
@@ -1130,6 +1187,9 @@ void telaTamanho(RenderWindow &window, Data &media, int dificuldade, int tam)
 	time(&tempo_inicial);
 
 	int indice = 0;
+	Dicatype dica;
+	dica.dica=rand()%10;
+	dica.trocar=false;
 	while(window.isOpen())
 	{
 		Event event;
@@ -1142,6 +1202,8 @@ void telaTamanho(RenderWindow &window, Data &media, int dificuldade, int tam)
 			{
 				// window closed
 				case Event::Closed:
+					delete []m[0];
+					delete []b[0];
 					window.close();
 					break;
 
@@ -1150,6 +1212,8 @@ void telaTamanho(RenderWindow &window, Data &media, int dificuldade, int tam)
 					if( (Keyboard::isKeyPressed(Keyboard::Escape)) )
 					{
 						media.musicas.ravel.stop();
+						delete []m[0];
+						delete []b[0];
 						telaMenu(window,media);
 					}
 					selecionarTile(window, tamanho,indice, m,b, media, erros, diag);
@@ -1167,7 +1231,7 @@ void telaTamanho(RenderWindow &window, Data &media, int dificuldade, int tam)
 		window.clear();
 
 		window.draw(media.imagens.fundo_jogo);
-		desenharMapa(window, m , b, tamanho, indice, tempo_decorrido, erros);
+		desenharMapa(window,media.textos, m , b, tamanho, indice, tempo_decorrido, erros, coeficienteDificuldade, dica);
 
 
 		window.display();
@@ -1178,8 +1242,11 @@ void telaTamanho(RenderWindow &window, Data &media, int dificuldade, int tam)
 		}
 		if(testarVenceu(m, tamanho))
 		{
+			delete []m[0];
+			delete []b[0];
 			venceu=true;
-			if(validarRank(tamanho, tempo_decorrido, media, diag))
+			int tempoSomado = tempo_decorrido+(coeficienteDificuldade*erros)-((20-erros)*dificuldade);
+			if(validarRank(tamanho,tempoSomado , media, diag))
 			{
 				telaRank(window, media);
 			}

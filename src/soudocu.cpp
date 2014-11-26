@@ -111,7 +111,7 @@ void carregarTextos(TextData &texto, int tipo)
 		texto.dicas[3]="ESC para retornar ao menu";
 		texto.dicas[4]="Seu idioma é o Holandês";
 		texto.dicas[5]="ESC para retornar ao menu";
-		texto.dicas[6]="Escrevi e sai correndo pau no cu de quem ta lendo";
+		texto.dicas[6]="Menos erros = Menos tempo";
 		texto.dicas[7]="O nivel de dificuldade pode melhorar sua colocação";
 		texto.dicas[8]="Terra das flores e dos moinhos de vento";
 		texto.dicas[9]="Venceu o Brasil na copa de 2010";

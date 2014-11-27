@@ -21,6 +21,12 @@
 using namespace std;
 using namespace sf;
 
+struct Entradas{
+	int val;
+	string valor;
+	Text tile;
+};
+
 struct Dicatype{
 	int dica;
 	bool trocar;
@@ -386,68 +392,7 @@ int escolherDificuldade(RenderWindow &window, Data &media)
 	}
 }
 
-int lerTile(RenderWindow &window, int tamanho,int indice, int **mapa,bool diag)
-{
-	Event event;
-	string valor="";
-
-	while(window.isOpen())
-	{
-		while (window.pollEvent(event))
-		{
-			// check the type of the event...
-			switch (event.type)
-			{
-				// window closed
-				case Event::Closed:
-					window.close();
-					break;
-
-				case Event::KeyPressed:
-					if( (Keyboard::isKeyPressed(Keyboard::Return)) )
-					{
-						int val=atoi(valor.c_str());
-						bool valido;
-						if(diag)
-						{
-							valido=validarColuna(mapa,tamanho,indice%tamanho,val) && validarLinha(mapa,tamanho,indice/tamanho,val) && validarQuadrado(mapa,tamanho,indice/tamanho,indice%tamanho, val) && validarDiagonal(mapa,tamanho,indice/tamanho,indice%tamanho, val);
-						}
-						else
-						{
-							valido=validarColuna(mapa,tamanho,indice%tamanho,val) && validarLinha(mapa,tamanho,indice/tamanho,val) && validarQuadrado(mapa,tamanho,indice/tamanho,indice%tamanho, val);
-						}
-						if(valido)
-						{
-							return val;
-						}
-						else
-						{
-							return 0;
-						}
-
-					}
-				break;
-				// In event loop...
-				case Event::TextEntered:
-					// Handle ASCII characters only
-					if(event.text.unicode=='\b' && valor.size()>0)
-					{
-						valor.erase(valor.size()-1,1);
-					}
-					else if(event.text.unicode < 128 && valor.size()<3)
-					{
-						valor+= static_cast<char>(event.text.unicode);
-					}
-				break;
-				// we don't process other types of events
-				default:
-					break;
-			}
-		}
-	}
-}
-
-void selecionarTile(RenderWindow &window, int tamanho,int &indice, int **mapa, bool **bloc,Data &media, int &erros, bool diag)
+void selecionarTile(RenderWindow &window, int tamanho,int &indice, int **mapa, bool **bloc,Data &media, int &erros, bool diag, Entradas &entrada)
 {
 	if(Keyboard::isKeyPressed(Keyboard::Left))
 	{
@@ -456,6 +401,7 @@ void selecionarTile(RenderWindow &window, int tamanho,int &indice, int **mapa, b
 		{
 			indice=tamanho*tamanho-1;
 		}
+		entrada.valor="";
 	}
 
 	if(Keyboard::isKeyPressed(Keyboard::Right))
@@ -465,6 +411,7 @@ void selecionarTile(RenderWindow &window, int tamanho,int &indice, int **mapa, b
 		{
 			indice=0;
 		}
+		entrada.valor="";
 	}
 	if(Keyboard::isKeyPressed(Keyboard::Up))
 	{
@@ -473,6 +420,7 @@ void selecionarTile(RenderWindow &window, int tamanho,int &indice, int **mapa, b
 		{
 			indice=((tamanho*tamanho))-tamanho+((indice+tamanho)%tamanho);
 		}
+		entrada.valor="";
 	}
 
 	if(Keyboard::isKeyPressed(Keyboard::Down))
@@ -482,18 +430,75 @@ void selecionarTile(RenderWindow &window, int tamanho,int &indice, int **mapa, b
 		{
 			indice=indice%tamanho;
 		}
+		entrada.valor="";
 	}
-	if(Keyboard::isKeyPressed(Keyboard::Return))
+	if(!bloc[indice/tamanho][indice%tamanho] && entrada.valor.size()<2)
 	{
-		if(!bloc[indice/tamanho][indice%tamanho])
+		if(Keyboard::isKeyPressed(Keyboard::Num0) || Keyboard::isKeyPressed(Keyboard::Numpad0))
 		{
-			int val=lerTile(window, tamanho, indice, mapa, diag);
-			if(val>0 && val<=tamanho)
+			entrada.valor+='0';
+		}
+		if(Keyboard::isKeyPressed(Keyboard::Num1) || Keyboard::isKeyPressed(Keyboard::Numpad1))
+		{
+			entrada.valor+='1';
+		}
+		if(Keyboard::isKeyPressed(Keyboard::Num2) || Keyboard::isKeyPressed(Keyboard::Numpad2))
+		{
+			entrada.valor+='2';
+		}
+		if(Keyboard::isKeyPressed(Keyboard::Num3) || Keyboard::isKeyPressed(Keyboard::Numpad3))
+		{
+			entrada.valor+='3';
+		}
+		if(Keyboard::isKeyPressed(Keyboard::Num4) || Keyboard::isKeyPressed(Keyboard::Numpad4))
+		{
+			entrada.valor+='4';
+		}
+		if(Keyboard::isKeyPressed(Keyboard::Num5) || Keyboard::isKeyPressed(Keyboard::Numpad5))
+		{
+			entrada.valor+='5';
+		}
+		if(Keyboard::isKeyPressed(Keyboard::Num6) || Keyboard::isKeyPressed(Keyboard::Numpad6))
+		{
+			entrada.valor+='6';
+		}
+		if(Keyboard::isKeyPressed(Keyboard::Num7) || Keyboard::isKeyPressed(Keyboard::Numpad7))
+		{
+			entrada.valor+='7';
+		}
+		if(Keyboard::isKeyPressed(Keyboard::Num8) || Keyboard::isKeyPressed(Keyboard::Numpad8))
+		{
+			entrada.valor+='8';
+		}
+		if(Keyboard::isKeyPressed(Keyboard::Num9) || Keyboard::isKeyPressed(Keyboard::Numpad9))
+		{
+			entrada.valor+='9';
+		}
+	}
+	if(!bloc[indice/tamanho][indice%tamanho])
+	{
+		if(Keyboard::isKeyPressed(Keyboard::Return))
+		{
+			entrada.val = atoi(entrada.valor.c_str());
+
+			bool valido;
+			if(diag)
 			{
-				mapa[indice/tamanho][indice%tamanho]=val;
+				valido=validarColuna(mapa,tamanho,indice%tamanho,entrada.val) && validarLinha(mapa,tamanho,indice/tamanho,entrada.val) && validarQuadrado(mapa,tamanho,indice/tamanho,indice%tamanho, entrada.val) && validarDiagonal(mapa,tamanho,indice/tamanho,indice%tamanho, entrada.val);
 			}
 			else
 			{
+				valido=validarColuna(mapa,tamanho,indice%tamanho,entrada.val) && validarLinha(mapa,tamanho,indice/tamanho,entrada.val) && validarQuadrado(mapa,tamanho,indice/tamanho,indice%tamanho, entrada.val);
+			}
+
+			if(entrada.val>0 && entrada.val<=tamanho && valido)
+			{
+				mapa[indice/tamanho][indice%tamanho]=entrada.val;
+				entrada.valor="";
+			}
+			else
+			{
+				entrada.valor="";
 				erros++;
 				media.musicas.erro.play();
 			}
@@ -627,7 +632,7 @@ void desenharMapa(RenderWindow &window, TextData texto, int **mapa,bool **bloc, 
 	RectangleShape quadrado;
 	quadrado.setSize(Vector2f(TAMANHOTILE, TAMANHOTILE));
 	quadrado.setOutlineThickness(1);
-	quadrado.setOutlineColor(sf::Color::Black);
+	quadrado.setOutlineColor(Color(200,200,200));
 	quadrado.setFillColor(sf::Color::Transparent);
 
 	for(int i=0; i<tamanho; i++)
@@ -645,6 +650,14 @@ void desenharMapa(RenderWindow &window, TextData texto, int **mapa,bool **bloc, 
 			{
 				texto="";
 			}
+			if(indice%tamanho==j && indice/tamanho==i)
+			{
+				quadrado.setFillColor(Color(0,255,0,210));
+				quadrado.setPosition((400-tamanho/2*TAMANHOTILE)+j*TAMANHOTILE,(300-tamanho/2*TAMANHOTILE)+i*TAMANHOTILE);
+				window.draw(quadrado);
+				quadrado.setFillColor(sf::Color::Transparent);
+			}
+
 			Text tile(texto, font, TAMANHOFONTE);
 			tile.setPosition((400-tamanho/2*TAMANHOTILE)+j*TAMANHOTILE+TAMANHOFONTE/2, (300-tamanho/2*TAMANHOTILE)+i*TAMANHOTILE+TAMANHOFONTE/2);
 			if(bloc[i][j])
@@ -658,14 +671,6 @@ void desenharMapa(RenderWindow &window, TextData texto, int **mapa,bool **bloc, 
 
 
 			window.draw(tile);
-
-			if(indice%tamanho==j && indice/tamanho==i)
-			{
-				quadrado.setFillColor(Color(255,0,0,100));
-				quadrado.setPosition((400-tamanho/2*TAMANHOTILE)+j*TAMANHOTILE,(300-tamanho/2*TAMANHOTILE)+i*TAMANHOTILE);
-				window.draw(quadrado);
-				quadrado.setFillColor(sf::Color::Transparent);
-			}
 		}
 	}
 
@@ -1148,7 +1153,7 @@ void telaFim(RenderWindow &window, Data &media, bool venceu)
 
 void telaTamanho(RenderWindow &window, Data &media, int dificuldade, int tam)
 {
-	int coeficienteDificuldade=3-dificuldade;
+	int coeficienteDificuldade=(3-dificuldade)*10;
 	int tamanho=tam;
 	int **m = new int*[20];
 	m[0] = new int[20*20];
@@ -1190,6 +1195,27 @@ void telaTamanho(RenderWindow &window, Data &media, int dificuldade, int tam)
 	Dicatype dica;
 	dica.dica=rand()%10;
 	dica.trocar=false;
+
+	Entradas entrada;
+	entrada.val=0;
+	entrada.valor="";
+
+	Font font;
+	font.loadFromFile("font/sansation.ttf");
+
+	int TAMANHOTILE, TAMANHOFONTE;
+
+	if(tamanho==16)
+	{
+		TAMANHOTILE=30;
+		TAMANHOFONTE=15;
+	}
+	else
+	{
+		TAMANHOTILE=40;
+		TAMANHOFONTE=20;
+	}
+
 	while(window.isOpen())
 	{
 		Event event;
@@ -1216,7 +1242,7 @@ void telaTamanho(RenderWindow &window, Data &media, int dificuldade, int tam)
 						delete []b[0];
 						telaMenu(window,media);
 					}
-					selecionarTile(window, tamanho,indice, m,b, media, erros, diag);
+					selecionarTile(window, tamanho,indice, m,b, media, erros, diag, entrada);
 				break;
 
 				// we don't process other types of events
@@ -1233,7 +1259,14 @@ void telaTamanho(RenderWindow &window, Data &media, int dificuldade, int tam)
 		window.draw(media.imagens.fundo_jogo);
 		desenharMapa(window,media.textos, m , b, tamanho, indice, tempo_decorrido, erros, coeficienteDificuldade, dica);
 
+		entrada.tile.setCharacterSize(20);
+		entrada.tile.setColor(Color(80, 80, 80));
+		entrada.tile.setFont(font);
+		entrada.tile.setString(entrada.valor);
+		entrada.tile.setPosition(10,10);
+		entrada.tile.setPosition((400-tamanho/2*TAMANHOTILE)+indice%tamanho*TAMANHOTILE+TAMANHOFONTE/2, (300-tamanho/2*TAMANHOTILE)+indice/tamanho*TAMANHOTILE+TAMANHOFONTE/2);
 
+		window.draw(entrada.tile);
 		window.display();
 
 		if(erros>20)

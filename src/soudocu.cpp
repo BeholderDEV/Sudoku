@@ -11,13 +11,12 @@
 #include <SFML/Audio.hpp>
 #include <fstream>
 #include <string>
-
+#include <time.h>
 
 #define MODOS 1
 #define DIFICULDADE 2
 #define MENU 3
 
-#include <time.h>
 using namespace std;
 using namespace sf;
 
@@ -432,7 +431,7 @@ void selecionarTile(RenderWindow &window, int tamanho,int &indice, int **mapa, b
 		}
 		entrada.valor="";
 	}
-	if(!bloc[indice/tamanho][indice%tamanho] && entrada.valor.size()<2)
+	if(!bloc[indice/tamanho][indice%tamanho] && entrada.valor.size()<=1)
 	{
 		if(Keyboard::isKeyPressed(Keyboard::Num0) || Keyboard::isKeyPressed(Keyboard::Numpad0))
 		{
@@ -569,15 +568,16 @@ void desenharMapa(RenderWindow &window, TextData texto, int **mapa,bool **bloc, 
 	Font font;
 	font.loadFromFile("font/sansation.ttf");
 
-
-	Text relogio(intTOstring(tempo), font, 20);
-	relogio.setPosition(700, 40);
+	string tempopass= "tempo: "+ intTOstring(tempo);
+	Text relogio(tempopass, font, 20);
+	relogio.setPosition(650, 40);
 	relogio.setColor(Color(80, 80, 80));
 
 	window.draw(relogio);
 
-	Text erros(intTOstring(errados), font, 20);
-	erros.setPosition(700, 550);
+	string errostext ="Erros: " + intTOstring(errados);
+	Text erros(errostext, font, 20);
+	erros.setPosition(680, 550);
 	erros.setColor(Color::Red);
 
 	string soma= "+ ";
@@ -993,8 +993,18 @@ void desenharRank(RenderWindow &window, Data &media,int x, int y, int tamanho)
 
 	Text title(titulo, font, 50);
 	title.setPosition(newx, y);
-	title.setColor(Color::Yellow);
+	title.setColor(Color(0,128,0));
 
+	Text setaesq("<", font, 100);
+	setaesq.setPosition(30, 250);
+	setaesq.setColor(Color(0,128,0));
+
+	Text setadir(">", font, 100);
+	setadir.setPosition(700, 250);
+	setadir.setColor(Color(0,128,0));
+
+	window.draw(setaesq);
+	window.draw(setadir);
 	window.draw(title);
 
 	y+=80;
